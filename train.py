@@ -24,6 +24,7 @@ import pickle as pkl
 import seaborn as sns
 from data_class import CellTypeDataset
 from ae_model import AE
+from eval_funcs import get_correlation,get_correlation_between_runs,get_roc_curve
 plt.rcParams['agg.path.chunksize'] = 10000
 
 from data_processing import DataProcessing
@@ -71,12 +72,9 @@ class Train():
         self.width_multiplier = self.param_dict["width_multiplier"]
 
         self.l2_reg = self.param_dict["l2_reg"]
-        self.l2_man = self.param_dict["l2_man"]
         self.l1 = self.param_dict["l1"]
-        self.gaussian_noise = self.param_dict["gaussian_noise"]
         self.dropout_rate = self.param_dict["dropout_rate"]
         self.batch_norm = self.param_dict["batch_norm"]
-        self.constrain_embedding = self.param_dict["constrain_embedding"]
         self.relationships_filter = self.param_dict["relationships_filter"]
 
         self.moa_beta = self.param_dict["moa_beta"]
@@ -85,7 +83,7 @@ class Train():
 
         self.roc_data_path = self.param_dict["roc_data_path"]
 
-        self.data_obj = DataProcessing(self.input_path,self.sparse_path,train_path,self.batch_size,self.relationships_filter)
+        self.data_obj = DataProcessing(self.input_path,self.sparse_path,self.batch_size,self.relationships_filter)
         
         self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier).to(device)
         self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier).to(device)
@@ -188,8 +186,8 @@ class Train():
         self.trained_models.append(self.model)
 
         
-        correlation, corr_list,input_list,output_list = self.get_correlation(train_loader)
-        test_correlation, test_corr_list,test_input_list,test_output_list = self.get_correlation(test_loader)
+        correlation, corr_list,input_list,output_list = get_correlation(self.model,train_loader)
+        test_correlation, test_corr_list,test_input_list,test_output_list = get_correlation(self.model,test_loader)
         print("correlation "+str(correlation))
 
         print("test correlation "+str(correlation))
@@ -210,7 +208,7 @@ class Train():
             self.plot_input_vs_output(test_input_list,test_output_list,test_correlation,True,self.epochs,fold=fold_num)
             self.create_corr_boxplt(corr_list,correlation,self.epochs,False,fold=fold_num)
             self.create_corr_boxplt(test_corr_list,test_correlation,self.epochs,True,fold=fold_num)
-            auc = self.get_roc_curve(self.trained_embedding_model,fold=fold_num)
+            auc = self.get_roc_curve(self.data_obj,self.trained_embedding_model,self.get_save_path(),fold=fold_num)
         if self.moa > 0:
                 self.moa_test_losses = []
                 self.moa_train_losses = []
@@ -240,26 +238,13 @@ class Train():
             self.train_output = outputs
             train_loss = self.criterion(outputs.to(device),labels.float().to(device))
 
-            if self.l2_man > 0  or self.moa > 0 or self.constrain_embedding > 0:
-                    l2_loss = 0
-                    moa_loss = 0
-                    embedding_loss = 0
-                    for name, param in self.model.named_parameters():
-                            #if self.moa > 0 and (name == 'decoder.ae_decoder.decoder_1.weights' or name == 'decoder.ae_decoder.decoder_1.weight'):
-                            #moa_loss = moa_loss + self.enforce_moa(param)
-                            if self.l2_man > 0:
-                                self.l2_loss = l2_loss + self.l2_man*torch.sum(param**2)
-                    if self.moa > 0 or self.constrain_embedding > 0:
-                            if self.constrain_embedding > 0:
-                                embeddings = self.model.encoder(samples.float())
-                                embedding_loss = self.embedding_constraint(embeddings,20)*self.constrain_embedding
-                                self.embedding_losses.append(embedding_loss.cpu().detach())
-                            if self.moa > 0:
-                                moa_loss,violations = self.get_moa_loss(self.model.decoder,subset=self.moa_subset,beta=self.moa_beta)
-                                epoch_moa_loss += moa_loss.cpu().detach()
-                                epoch_moa_violations += violations.cpu().detach()
+            moa_loss = 0
+            if self.moa > 0: 
+                moa_loss,violations = self.get_moa_loss(self.model.decoder,subset=self.moa_subset,beta=self.moa_beta)
+                epoch_moa_loss += moa_loss.cpu().detach()
+                epoch_moa_violations += violations.cpu().detach()
 
-                    train_loss = train_loss+l2_loss+moa_loss+embedding_loss
+            train_loss = train_loss+moa_loss
             
             """
             if len(self.training_losses)<(fold+1):
@@ -306,25 +291,12 @@ class Train():
                 self.test_output = test_output
                 test_loss = self.criterion(test_output,labels.float())
 
-                if self.l2_man > 0  or self.moa > 0 or self.constrain_embedding > 0:
-                    l2_loss = 0
-                    moa_loss = 0
-                    embedding_loss = 0
-                    for name, param in self.model.named_parameters():
-                            #if self.moa > 0 and (name == 'decoder.ae_decoder.decoder_1.weights' or name == 'decoder.ae_decoder.decoder_1.weight'):
-                            #moa_loss = moa_loss + self.enforce_moa(param)
-                            if self.l2_man > 0:
-                                self.l2_loss = l2_loss + self.l2_man*torch.sum(param**2)
-                    if self.moa > 0 or self.constrain_embedding > 0:
-                            embeddings = self.model.encoder(samples.float())
-                            if self.constrain_embedding > 0:
-                                    embedding_loss = self.embedding_constraint(embeddings,10)*self.constrain_embedding
-                                    self.embedding_losses.append(embedding_loss.cpu().detach())
-                            if self.moa > 0:
-                                    moa_loss,violations = self.get_moa_loss(self.model.decoder,subset=self.moa_subset,beta=self.moa_beta)
-                                    epoch_moa_loss += moa_loss.cpu().detach()
-                                    epoch_moa_violations += violations.cpu().detach()
-                    test_loss = test_loss+l2_loss+moa_loss+embedding_loss
+                moa_loss=0
+                if self.moa > 0:
+                    moa_loss,violations = self.get_moa_loss(self.model.decoder,subset=self.moa_subset,beta=self.moa_beta)
+                    epoch_moa_loss += moa_loss.cpu().detach()
+                    epoch_moa_violations += violations.cpu().detach()
+                test_loss = test_loss+moa_loss
                 loss += test_loss.item()
 
         if self.moa > 0:
@@ -362,14 +334,12 @@ class Train():
         time_tuple = time.localtime(time.time())
         time_for_save = str(time_tuple[1])+"-"+str(time_tuple[2])+"_"+str(time_tuple[3])+"."+str(time_tuple[4])+"."+str(time_tuple[5])
 
-        save_path = self.base_path+str(self.model_type)+"_epochs"+str(self.epochs)+"_batchsize"+str(self.batch_size)+"_edepth"+str(self.encoder_depth)+"_ddepth"+str(self.decoder_depth)+"_lr"+str(self.lr)
+        save_path = self.base_path+str(self.model_type)+"_epochs"+str(self.epochs)+"_batchsize"+str(self.batch_size)+"_lr"+str(self.lr)
 
         if self.lr_sched:
             save_path += "_lrsched"
         if self.l2_reg > 0:
             save_path += "_l2"+str(self.l2_reg)
-        if self.l2_man > 0:
-            save_path += "_l2man"+str(self.l2_man)
         if self.l1 > 0:
             save_path += "_l1"+str(self.l1)
         if self.moa > 0:
@@ -380,8 +350,6 @@ class Train():
             save_path += "_wr"+str(self.warm_restart)
         if self.batch_norm:
             save_path += "_batchnorm"
-        if self.gaussian_noise > 0:
-            save_path += "_gn"+str(self.gaussian_noise)
         if self.relationships_filter > 1:
             save_path += "_rel_conn"+str(self.relationships_filter)
 
@@ -433,12 +401,12 @@ class Train():
 
     def cross_validation(self,k_splits):
         dataset = self.data_obj.get_input_data()
-        splits, train_splits, test_splits, validation_split = self.get_split_indices(dataset,k_splits) 
+        splits, train_splits, test_splits, validation_split = self.data_obj.get_split_indices(dataset,k_splits) 
         dataset = dataset.sample(frac=1)
         for fold in range(k_splits): 
                 prep_data_start = time.time()
                 print('Fold {}'.format(fold + 1))
-                train_data, test_data = self.get_train_test_data(fold,k_splits,dataset,splits,train_splits,test_splits)
+                train_data, test_data = self.data_obj.get_train_test_data(fold,k_splits,dataset,splits,train_splits,test_splits)
                 train_data_celltype = CellTypeDataset(train_data,self.data_obj.get_output_data(train_data))
                 test_data_celltype = CellTypeDataset(test_data,self.data_obj.get_output_data(test_data))
 
@@ -464,7 +432,7 @@ class Train():
                 validation_data = dataset.iloc[validation_split[0]:validation_split[1]]
                 validation_data_celltype = CellTypeDataset(validation_data,self.data_obj.get_output_data(validation_data))
                 validation_loader = torch.utils.data.DataLoader(validation_data_celltype,batch_size=batch_size)
-                self.get_correlation_between_runs(validation_loader)
+                get_correlation_between_runs(self.trained_models,validation_loader,self.get_saved_path())
 
 
 
@@ -484,7 +452,6 @@ if __name__ == "__main__":
         parser.add_argument('--lr_sched',type=str,required=False,default=False,help='True if you want learning rate to be scheduled')
         parser.add_argument('--batch_norm',type=str,required=False,default=False,help='True if you want batch normalization layers')
         parser.add_argument('--batch_size',type=int,required=True,help='size of training batches')
-        parser.add_argument('--gaussian_noise',type=float,required=False,default=0,help='variance for gaussian noise')
         parser.add_argument('--l1',type=float,required=False,default=0,help='value for l1 reg')
         parser.add_argument('--warm_restart',type=int,required=False,default=0,help='how many times during training do you want adam to restart')
         parser.add_argument('--max_lr',type=float,required=False,default=1e-3,help='max value lr_sched will reach')
@@ -516,8 +483,6 @@ if __name__ == "__main__":
         l1 = args.l1
         batch_norm = args.batch_norm.lower() == 'true'
         dropout_rate = args.dropout
-        gaussian_noise = args.gaussian_noise
-        constrain_embedding = args.constrain_embedding
         k = args.k_splits
         
         sparse_path = args.sparse_data_path
@@ -558,8 +523,6 @@ if __name__ == "__main__":
             "l1":l1,
             "batch_norm":batch_norm,
             "dropout_rate":dropout_rate,
-            "gaussian_noise":gaussian_noise,
-            "constrain_embedding":constrain_embedding,
 
             "input_path":input_path,
             "sparse_path":sparse_path,

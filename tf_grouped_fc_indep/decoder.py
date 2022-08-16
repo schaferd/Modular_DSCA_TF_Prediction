@@ -19,7 +19,7 @@ class AEDecoder(nn.Module):
                 self.is_bn = kwargs["batch_norm"]
                 self.width_multiplier = kwargs["width_multiplier"]
 
-                matrices_obj = TFGroupedFCIndep(data_obj,nodes_per_tf=self.width_multiplier)
+                matrices_obj = TFGroupedFCIndep(self.data_obj,nodes_per_tf=self.width_multiplier)
 
                 self.first_weights = matrices_obj.get_first_layer()
                 self.middle_weights = matrices_obj.get_middle_layers()

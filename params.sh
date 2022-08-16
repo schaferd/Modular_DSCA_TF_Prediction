@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export MODEL_TYPE='tf_grouped' # name for model
-export EPOCHS=20 #how many epochs will be created
+export EPOCHS=2 #how many epochs will be created
 export FIG_FREQ=2 # how often figures will get generated
 
 export SAVE_MODEL=False # true if model saves
@@ -9,7 +9,7 @@ export SAVE_FIGS=True # true if model saves figures
 export RECORD=True
 
 #########ENCODER#########
-export TF_GROUPED_FC_INDEP_ENCODER=true
+export TF_GROUPED_FC_INDEP_ENCODER=false
 export TF_GROUPED_INDEP_ENCODER=true
 export GENE_GROUPED_FC_INDEP_ENCODER=false
 export GENE_GROUPED_INDEP_ENCODER=false
@@ -39,7 +39,7 @@ export WARM_RESTART=0 # how many times you want to restart settings
 
 export BATCH_SIZE=128 # number of training examples used in one iteration
 export WIDTH_MULTIPLIER=1 #input_size*width_multiplier for width inner network
-export RELATIONSHIPS_FILTER=15
+export RELATIONSHIPS_FILTER=2
 
 export LEARNING_RATE=1e-2 # learning rate
 

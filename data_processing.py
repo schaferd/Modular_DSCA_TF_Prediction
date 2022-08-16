@@ -1,16 +1,22 @@
+import pandas as pd
+import numpy as np
+import random
+import torch
+from pyensembl import EnsemblRelease
+ensembl_data = EnsemblRelease(78)
 
 class DataProcessing():
 
-        def __init__(self,input_data,sparse_data,train_path,batch_size,relationships_filter):
+        def __init__(self,input_data,sparse_data,batch_size,relationships_filter):
                 self.sparse_data_file = sparse_data.split("/")[-1]
                 self.sparse_data = pd.read_csv(sparse_data, sep='\t', low_memory=False)
                 self.sparse_data = self.sparse_data.dropna()
 
-                self.train_path = train_path
                 self.batch_size = batch_size
                 self.relationships_filter = relationships_filter
 
                 self.tf_gene_dict = {}
+                self.gene_tf_dict = {}
 
                 self.input_data = pd.read_pickle(input_data)
 
@@ -21,16 +27,17 @@ class DataProcessing():
                 new_sparse_genes = []
                 gene_id_to_ensembl = {}
                 for g in range(len(self.sparse_genes)):
-                    ensembl_id = self.convert_to_ensembl(self.sparse_genes[g])
-                    if ensembl_id is not None:
-                        new_sparse_genes.extend(ensembl_id)
-                        gene_id_to_ensembl[self.sparse_genes[g]] = ensembl_id
+                        try:
+                                ensembl_id = ensembl_data.gene_ids_of_gene_name(self.sparse_genes[g])
+                                new_sparse_genes.extend(ensembl_id)
+                                gene_id_to_ensembl[self.sparse_genes[g]] = ensembl_id
+                        except:
+                                ensembl_id = None
 
                 self.sparse_genes = np.array(new_sparse_genes)
                 self.input_genes = self.input_data.columns
 
                 self.gene_min, self.gene_max = self.get_data_min_max()
-                self.gene_tf_dict = {}
 
                 self.overlapping_genes = set() 
                 for g in self.sparse_genes:
@@ -56,8 +63,6 @@ class DataProcessing():
                                             if g in self.overlapping_genes:
                                                 self.tf_gene_dict[row['tf']][0].append(g)
                                                 self.tf_gene_dict[row['tf']][1].append(row['mor'])
-                print("num relationships")
-                print(sparse_data_counter)
 
                 """
                 filter tfs with gene sets < n 
@@ -99,6 +104,7 @@ class DataProcessing():
 
                 self.input_data = self.input_data.loc[:,self.overlap_list]
                 self.input_genes = self.input_data.columns
+                self.genes = self.input_genes
 
                 #self.input_labels = self.input_data[self.overlap_list]
                 self.labels = self.input_data.loc[:,self.overlap_list]
