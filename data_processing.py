@@ -1,4 +1,6 @@
 import pandas as pd
+
+import collections
 import numpy as np
 import random
 import torch
@@ -49,20 +51,22 @@ class DataProcessing():
                         sparse_data_counter += 1
                         in_overlap_list = None
                         if row['target'] in gene_id_to_ensembl: 
-                                in_overlap_list = gene_id_to_ensembl[row['target']]
-                                if in_overlap_list is not None:
-                                        for g in in_overlap_list:
+                                ensembl_id = gene_id_to_ensembl[row['target']]
+                                if ensembl_id is not None:
+                                        for g in ensembl_id:
                                             if g in self.overlapping_genes:
                                                 if g not in self.gene_tf_dict:
-                                                    self.gene_tf_dict[g] = [list(),list()]
-                                                self.gene_tf_dict[g][0].append(row['tf'])
-                                                self.gene_tf_dict[g][1].append(row['mor'])
-                                        if row['tf'] not in self.tf_gene_dict:
-                                            self.tf_gene_dict[row['tf']] = [list(),list()]
-                                        for g in in_overlap_list :
-                                            if g in self.overlapping_genes:
-                                                self.tf_gene_dict[row['tf']][0].append(g)
-                                                self.tf_gene_dict[row['tf']][1].append(row['mor'])
+                                                    self.gene_tf_dict[g] = collections.OrderedDict() 
+                                                self.gene_tf_dict[g][row['tf']] = row['mor']
+                                                #self.gene_tf_dict[g][0].append(row['tf'])
+                                                #self.gene_tf_dict[g][1].append(row['mor'])
+
+                                                if row['tf'] not in self.tf_gene_dict:
+                                                    self.tf_gene_dict[row['tf']] = collections.OrderedDict()
+
+                                                self.tf_gene_dict[row['tf']][g] = row['mor']
+                                                #self.tf_gene_dict[row['tf']][0].append(g)
+                                                #self.tf_gene_dict[row['tf']][1].append(row['mor'])
 
                 """
                 filter tfs with gene sets < n 
@@ -70,7 +74,7 @@ class DataProcessing():
                 genes_to_remove = set() 
                 tfs_to_remove = set()
                 for tf,vals in self.tf_gene_dict.items():
-                    if len(vals[0]) < self.relationships_filter or len(vals[0]) > 300:
+                    if len(vals) < self.relationships_filter or len(vals) > 300:
                         tfs_to_remove.add(tf)
 
                 """
@@ -82,7 +86,7 @@ class DataProcessing():
 
                 for gene,vals in self.gene_tf_dict.items():
                     is_valid = False
-                    for tf in vals[0]:
+                    for tf in vals.keys():
                         if tf not in tfs_to_remove:
                             is_valid = True
                     if not is_valid:
@@ -104,7 +108,7 @@ class DataProcessing():
 
                 self.input_data = self.input_data.loc[:,self.overlap_list]
                 self.input_genes = self.input_data.columns
-                self.genes = self.input_genes
+                self.genes = self.overlap_list
 
                 #self.input_labels = self.input_data[self.overlap_list]
                 self.labels = self.input_data.loc[:,self.overlap_list]

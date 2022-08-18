@@ -55,7 +55,7 @@ class getROCCurve():
         return df
 
     def rank_matrix(self):
-        ranked_matrix = self.aggregate_activities.rank(axis = 0,method='min',na_option='keep',ascending='True')
+        ranked_matrix = self.aggregate_activities.rank(axis = 0,method='min',na_option='keep',ascending='False')
         scaled_rank_matrix = ranked_matrix/ranked_matrix.max(axis=0)
         return scaled_rank_matrix
 

@@ -3,7 +3,6 @@ from torch import nn
 
 import numpy as np 
 import pandas as pd
-from gaussian_noise import GaussianNoise
 import collections
 
 
@@ -26,8 +25,8 @@ class AEEncoder(nn.Module):
                 encoder['encoder_1'] = nn.Linear(self.gene_size,mid_layer_size)
                 encoder['encoder_activ1'] = activ_func
 
-                encoder['encoder_'+str(i+2)] = nn.Linear(mid_layer_size,mid_layer_size)
-                encoder['encoder_activ'+str(i+2)] = activ_func
+                encoder['encoder_2'] = nn.Linear(mid_layer_size,mid_layer_size)
+                encoder['encoder_activ2'] = activ_func
 
                 encoder['embedding'] = nn.Linear(mid_layer_size,self.tf_size)
                 encoder['embedding_activ'] = activ_func

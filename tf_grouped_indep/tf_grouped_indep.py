@@ -9,7 +9,6 @@ class TFGroupedIndep():
                 np.set_printoptions(threshold=1000)
                 self.tfs = data_obj.tfs
                 self.genes = data_obj.genes 
-                self.tf_gene_dict = data_obj.tf_gene_dict
                 self.gene_tf_dict = data_obj.gene_tf_dict
 
                 self.nodes_per_tf = nodes_per_tf
@@ -21,7 +20,7 @@ class TFGroupedIndep():
                 #loop through each tf
                 for gene in self.genes:
                     #loop through each relationship that tf is in
-                    for tf in self.gene_tf_dict[gene][0]:
+                    for tf in self.gene_tf_dict[gene]:
                         if tf in self.tf_dict:
                             #repeat that relationship nodes_per_tf times
                             for i in range(nodes_per_tf):
@@ -49,7 +48,7 @@ class TFGroupedIndep():
                 #loop through tfs
                 for i,gene in enumerate(self.genes):
                     #loop through relationships with specified tf
-                    for j,tf in enumerate(self.gene_tf_dict[gene][0]):
+                    for j,tf in enumerate(self.gene_tf_dict[gene]):
                         if tf in self.tfs:
                             #repeat that relationship in network nodes_per_tf times
                             for i_ in range(self.nodes_per_tf):

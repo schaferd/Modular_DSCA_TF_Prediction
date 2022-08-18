@@ -1,4 +1,10 @@
 import torch
+import numpy as np
+is_gpu = False
+if torch.cuda.is_available():
+    device = torch.device('cuda:0')
+    is_gpu = True
+print("is gpu "+str(is_gpu))
 
 class MOA():
     def __init__(self,data_obj,moa_factor,subset,beta):
@@ -17,9 +23,9 @@ class MOA():
         decoder_oputput = None
         mask = None
         probe = self.probe
-        if subset != 0:
+        if self.subset != 0:
             selectedIndex = np.arange(len(self.data_obj.tfs))
-            selectedIndex = np.random.permutation(selectedIndex)[0:subset]
+            selectedIndex = np.random.permutation(selectedIndex)[0:self.subset]
             TF_index = selectedIndex.copy()
             selectedIndex = np.insert(selectedIndex,[-1],len(self.data_obj.tfs))
 
@@ -33,6 +39,7 @@ class MOA():
         probe_rows = torch.masked_select(decoder_output[:-1],mask)
 
         diff = (probe_rows-control_row)
+        print("diff",diff)
 
         moa_vals = torch.masked_select(moa_matrix,mask)
 
@@ -42,8 +49,8 @@ class MOA():
         loss = torch.tensor(0.0, requires_grad = True)
         if torch.any(violated):
             violated_values = (torch.abs(diff))*violated.int()
-            lossL1 = beta * torch.sum(torch.abs(violated_values))
-            lossL2 = (1-beta) * torch.sum(torch.square(violated_values))
+            lossL1 = self.beta * torch.sum(torch.abs(violated_values))
+            lossL2 = (1-self.beta) * torch.sum(torch.square(violated_values))
             loss = self.moa_factor * (lossL1 + lossL2)
 
         return loss,violated_count
@@ -60,12 +67,13 @@ class MOA():
         for i in range(len(self.data_obj.tfs)):
             tf = self.data_obj.tfs[i]
             tf_info = self.data_obj.tf_gene_dict[tf]
-            for j in range(len(tf_info[0])):
-                gene_index = gene_index_dict[tf_info[0][j]]
-                if tf_info[1][j] != 0:
+            for gene in tf_info.keys():
+                gene_index = gene_index_dict[gene]
+                moa = tf_info[gene]
+                if moa != 0:
                     x_coords.append(i)
                     y_coords.append(gene_index)
-                    moa_val.append(tf_info[1][j])
+                    moa_val.append(moa)
         ind = [x_coords,y_coords]
         moa_matrix = torch.sparse_coo_tensor(ind,moa_val,([len(self.data_obj.tfs),len(self.data_obj.overlap_list)]))
 

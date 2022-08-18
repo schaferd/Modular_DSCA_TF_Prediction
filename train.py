@@ -1,6 +1,5 @@
 import argparse
 import sparselinear
-from collections import OrderedDict
 import gc
 from argparse import RawTextHelpFormatter
 import matplotlib.pyplot as plt
@@ -16,16 +15,15 @@ import torch
 import pandas as pd
 from torch import nn
 import torch
-torch.cuda.empty_cache()
-import mpl_scatter_density
-from matplotlib.colors import LinearSegmentedColormap
-import matplotlib as mpl
+from collections import OrderedDict
+from moa import MOA
+import shutil
+
 import pickle as pkl
-import seaborn as sns
 from data_class import CellTypeDataset
 from ae_model import AE
 from eval_funcs import get_correlation,get_correlation_between_runs,get_roc_curve
-plt.rcParams['agg.path.chunksize'] = 10000
+from figures import plot_input_vs_output,create_test_vs_train_plot,create_corr_hist,create_moa_figs
 
 from data_processing import DataProcessing
 
@@ -84,6 +82,7 @@ class Train():
         self.roc_data_path = self.param_dict["roc_data_path"]
 
         self.data_obj = DataProcessing(self.input_path,self.sparse_path,self.batch_size,self.relationships_filter)
+        self.MOA = MOA(self.data_obj,self.moa,self.moa_subset,self.moa_beta)
         
         self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier).to(device)
         self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier).to(device)
@@ -93,6 +92,8 @@ class Train():
         self.criterion = nn.MSELoss()
 
         self.save_path = None 
+        shutil.copyfile(encoder_path+'/encoder.py',self.get_save_path()+'/encoder.py')
+        shutil.copyfile(decoder_path+'/decoder.py',self.get_save_path()+'/decoder.py')
 
         self.scheduler = None 
 
@@ -164,10 +165,11 @@ class Train():
 
         for epoch in range(self.epochs):
             if self.warm_restart != 0 and epoch%self.warm_restart_freq == 0:
-                sched_state = self.scheduler.state_dict()
+                if self.lr_sched:
+                    sched_state = self.scheduler.state_dict()
+                    self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer,max_lr=self.max_lr,epochs=self.epochs,steps_per_epoch=len(train_loader))
+                    self.scheduler.load_state_dict(sched_state)
                 self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
-                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer,max_lr=1e-3,epochs=self.epochs,steps_per_epoch=len(train_loader))
-                self.scheduler.load_state_dict(sched_state)
 
             train_loss = self.train_iteration(train_loader,fold_num)
             test_loss = self.test_iteration(test_loader,fold_num)
@@ -178,8 +180,8 @@ class Train():
                 #if self.save_model:
                 #    torch.save(self.model.module.encoder,self.get_save_path()+"/model_encoder_fold"+str(fold_num)+"_epoch_"+str(epoch)+".pth")
                 if self.moa > 0:
-                        self.create_moa_loss_fig(fold=fold_num)
-                self.create_test_vs_train_plot(self.epochs,fold_num)
+                        create_moa_figs(self.moa_train_losses,self.moa_test_losses,self.moa_violation_count_train,self.moa_violation_count_test,self.get_save_path(),fold=fold_num)
+                create_test_vs_train_plot(self.training_losses,self.test_losses,self.get_save_path(),fold_num)
         
         
         self.trained_embedding_model = self.model.encoder
@@ -202,13 +204,13 @@ class Train():
         if self.save_figs:
             self.save_train_test_loss_data()
             if self.moa > 0:
-                    self.create_moa_loss_fig(fold=fold_num)
-            self.create_test_vs_train_plot(self.epochs,fold_num)
-            self.plot_input_vs_output(input_list,output_list,correlation,False,self.epochs,fold=fold_num)
-            self.plot_input_vs_output(test_input_list,test_output_list,test_correlation,True,self.epochs,fold=fold_num)
-            self.create_corr_boxplt(corr_list,correlation,self.epochs,False,fold=fold_num)
-            self.create_corr_boxplt(test_corr_list,test_correlation,self.epochs,True,fold=fold_num)
-            auc = self.get_roc_curve(self.data_obj,self.trained_embedding_model,self.get_save_path(),fold=fold_num)
+                    create_moa_figs(self.moa_train_losses,self.moa_test_losses,self.moa_violation_count_train,self.moa_violation_count_test,self.get_save_path(),fold=fold_num)
+            create_test_vs_train_plot(self.training_losses,self.test_losses,self.get_save_path(),fold_num)
+            plot_input_vs_output(input_list,output_list,correlation,False,self.get_save_path(),fold=fold_num)
+            plot_input_vs_output(test_input_list,test_output_list,test_correlation,True,self.get_save_path(),fold=fold_num)
+            create_corr_hist(corr_list,correlation,self.get_save_path(),False,fold=fold_num)
+            create_corr_hist(test_corr_list,test_correlation,self.get_save_path(),True,fold=fold_num)
+            auc = get_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,self.get_save_path(),fold=fold_num)
         if self.moa > 0:
                 self.moa_test_losses = []
                 self.moa_train_losses = []
@@ -240,7 +242,7 @@ class Train():
 
             moa_loss = 0
             if self.moa > 0: 
-                moa_loss,violations = self.get_moa_loss(self.model.decoder,subset=self.moa_subset,beta=self.moa_beta)
+                moa_loss,violations = self.MOA.get_moa_loss(self.model.decoder)
                 epoch_moa_loss += moa_loss.cpu().detach()
                 epoch_moa_violations += violations.cpu().detach()
 
@@ -293,7 +295,7 @@ class Train():
 
                 moa_loss=0
                 if self.moa > 0:
-                    moa_loss,violations = self.get_moa_loss(self.model.decoder,subset=self.moa_subset,beta=self.moa_beta)
+                    moa_loss,violations = self.MOA.get_moa_loss(self.model.decoder)
                     epoch_moa_loss += moa_loss.cpu().detach()
                     epoch_moa_violations += violations.cpu().detach()
                 test_loss = test_loss+moa_loss
@@ -331,10 +333,35 @@ class Train():
         if self.save_path is not None:
             return self.save_path 
 
+        model_type = ''
+        if self.model_type != 'none':
+            model_type = self.model_type+'_'
+
         time_tuple = time.localtime(time.time())
         time_for_save = str(time_tuple[1])+"-"+str(time_tuple[2])+"_"+str(time_tuple[3])+"."+str(time_tuple[4])+"."+str(time_tuple[5])
 
-        save_path = self.base_path+str(self.model_type)+"_epochs"+str(self.epochs)+"_batchsize"+str(self.batch_size)+"_lr"+str(self.lr)
+        encoder_name = encoder_path.rstrip('/').split('/')[-1]
+        decoder_name = decoder_path.rstrip('/').split('/')[-1]
+
+        if encoder_name == 'gene_grouped_fc_indep':
+            encoder_name = 'genefc'
+        elif encoder_name == 'gene_grouped_indep':
+            encoder_name = 'gene'
+        elif encoder_name == 'tf_grouped_fc_indep':
+            encoder_name = 'tffc'
+        elif encoder_name == 'tf_grouped_indep':
+            encoder_name = 'tf'
+
+        if decoder_name == 'gene_grouped_fc_indep':
+            decoder_name = 'genefc'
+        elif decoder_name == 'gene_grouped_indep':
+            decoder_name = 'gene'
+        elif decoder_name == 'tf_grouped_fc_indep':
+            decoder_name = 'tffc'
+        elif decoder_name == 'tf_grouped_indep':
+            decoder_name = 'tf'
+
+        save_path = self.base_path+str(model_type)+encoder_name+'-'+decoder_name+"_epochs"+str(self.epochs)+"_batchsize"+str(self.batch_size)+"_lr"+str(self.lr)
 
         if self.lr_sched:
             save_path += "_lrsched"

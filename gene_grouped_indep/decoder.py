@@ -16,8 +16,6 @@ class AEDecoder(nn.Module):
 
                 self.data_obj = kwargs["data"]	
 
-                self.decoder_depth = kwargs["decoder_depth"]
-                self.encoder_depth = kwargs["encoder_depth"]
                 self.dropout_rate = kwargs["dropout_rate"]
                 self.is_bn = kwargs["batch_norm"]
                 self.width_multiplier = kwargs["width_multiplier"]
@@ -27,11 +25,6 @@ class AEDecoder(nn.Module):
                 self.first_weights = matrices_obj.first_layer 
                 self.final_weights = matrices_obj.final_layer 
                     
-                self.decoder_features = max(np.amax(self.first_weights,axis=0)[0]+1,np.amax(self.middle_weights.T,axis=0)[0]+1)
-                self.tf_size = np.amax(self.first_weights.T,axis=0)[1]+1
-                self.gene_size = np.amax(self.final_weights.T,axis=0)[0]+1
-                self.labels_size = len(self.data_obj.labels.columns)
-
                 activ_func = nn.LeakyReLU()
 
 
@@ -39,12 +32,12 @@ class AEDecoder(nn.Module):
 
                 decoder = collections.OrderedDict()
 
-                self.first_layers['decoder_1'] = sl.SparseLinear(self.tf_size,self.decoder_features,connectivity=torch.tensor(self.first_weights))
+                decoder['decoder_1'] = sl.SparseLinear(max(self.first_weights[1])+1,max(self.first_weights[0])+1,connectivity=torch.tensor(self.first_weights))
                 decoder['decoder_activ1'] = activ_func
                 #if self.is_bn:
                 #    decoder['bn_decoder1'] = nn.BatchNorm1d(self.decoder_features)
 				
-                decoder['output'] = sl.SparseLinear(self.decoder_features,self.labels_size,connectivity=torch.tensor(self.final_weights))
+                decoder['output'] = sl.SparseLinear(max(self.final_weights[1])+1,max(self.final_weights[0])+1,connectivity=torch.tensor(self.final_weights))
                 #decoder['output_activ'] = activ_func
                 #if self.is_bn:
                 #    decoder['bn_output'] = nn.BatchNorm1d(self.labels_size)

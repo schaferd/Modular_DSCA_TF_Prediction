@@ -23,7 +23,7 @@ class AEDecoder(nn.Module):
 
                 self.first_weights = matrices_obj.get_first_layer()
                 self.middle_weights = matrices_obj.get_middle_layers()
-                self.final_weights = matrices_obj.get_final_layers()
+                self.final_weights = matrices_obj.get_final_layer()
 
                 self.first_weights = [self.final_weights[1],self.final_weights[0]]
                 self.final_weights = [self.first_weights[1],self.first_weights[0]]
@@ -37,21 +37,21 @@ class AEDecoder(nn.Module):
 
                 decoder = collections.OrderedDict()
 
-                decoder['decoder_1'] = sl.SparseLinear(self.tf_size,self.decoder_features,connectivity=torch.tensor([self.final_tf_weights[1],self.final_tf_weights[0]]))
+                decoder['decoder_1'] = sl.SparseLinear(self.tf_size,self.decoder_features,connectivity=torch.tensor(self.first_weights))
                 decoder['decoder_activ1'] = activ_func
                 #if self.is_bn:
                 #    decoder['bn_decoder1'] = nn.BatchNorm1d(self.decoder_features)
 
 
-                decoder['decoder_'+str(i+2)] = sl.SparseLinear(self.decoder_features,self.decoder_features,connectivity=torch.tensor(self.middle_tf_weights))
-                decoder['decoder_activ'+str(i+2)] = activ_func
+                decoder['decoder_2'] = sl.SparseLinear(self.decoder_features,self.decoder_features,connectivity=torch.tensor(self.middle_weights))
+                decoder['decoder_activ2'] = activ_func
                 #if self.is_bn:
                 #    decoder['bn_decoder'+str(i+2)] = nn.BatchNorm1d(self.decoder_features)
                 #if self.dropout_rate > 0:
                 #    middle_layers['do_decoder'+str(i+2)] = nn.Dropout(self.dropout_rate)
 
 
-                decoder['output'] = sl.SparseLinear(self.decoder_features,self.gene_size,connectivity=torch.tensor([self.first_tf_weights[1],self.first_tf_weights[0]]))
+                decoder['output'] = sl.SparseLinear(self.decoder_features,self.gene_size,connectivity=torch.tensor(self.final_weights))
                 #decoder['output_activ'] = activ_func
                 #if self.is_bn:
                 #    decoder['bn_output'] = nn.BatchNorm1d(self.gene_size)

@@ -7,6 +7,12 @@ import numpy as np
 import time
 import os
 
+is_gpu = False
+if torch.cuda.is_available():
+    device = torch.device('cuda:0')
+    is_gpu = True
+print("is gpu "+str(is_gpu))
+
 roc_path = os.path.join(os.path.dirname(__file__),'ko_tests/')
 print(roc_path)
 sys.path.insert(1,roc_path)

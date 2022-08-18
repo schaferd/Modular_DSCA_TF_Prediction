@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import mpl_scatter_density
+from matplotlib.colors import LinearSegmentedColormap
+import matplotlib as mpl
+plt.rcParams['agg.path.chunksize'] = 10000
 
 
 def create_moa_figs(moa_train_losses,moa_test_losses,moa_violation_count_train,moa_violation_count_test,save_path,fold=0):
@@ -41,19 +45,23 @@ def plot_input_vs_output(ae_input,ae_output,corr,is_test,save_path,fold=0):
     """
     new_input = np.asarray(flatten_list(ae_input)).flatten()
     new_output = np.asarray(flatten_list(ae_output)).flatten()
+    ax_min = min(min(new_input),min(new_output))
+    ax_max = max(max(new_input),max(new_output))
     plt.hist2d(x=new_output,y=new_input,bins=200,norm=mpl.colors.LogNorm())
     plt.ylabel('Input',size=12)
     plt.xlabel('Output',size=12)
-    plt.axis('square')
+    plt.xlim(ax_min,ax_max)
+    plt.ylim(ax_min,ax_max)
+    #plt.axis('square')
     if is_test:
         plt.title('AE Input vs. Output: Test Correlation:'+str(corr))
-        plt.savefig(save_path+'/test_y_vsyhat_scatter_fold'+str(fold)'_corr'+str(corr)+'.png')
+        plt.savefig(save_path+'/test_y_vsyhat_scatter_fold'+str(fold)+'_corr'+str(corr)+'.png')
     else:
         plt.title('AE Input vs. Output: Train Correlation'+str(corr))
         plt.savefig(save_path+'/train_y_vsyhat_scatter_fold'+str(fold)+'_corr'+str(corr)+'.png')
     plt.clf()
 
-def create_test_vs_train_plot(training_losses,test_losses,epoch,fold=0):
+def create_test_vs_train_plot(training_losses,test_losses,save_path,fold=0):
     """
     Saves RMSE vs. Epochs line plot
     """
@@ -74,7 +82,7 @@ def create_test_vs_train_plot(training_losses,test_losses,epoch,fold=0):
     plt.savefig(save_path+'/rmse_fold'+str(fold)+'.png')
     plt.clf()
 
-def create_corr_hist(corr_list,corr,epoch,is_test,fold=0):
+def create_corr_hist(corr_list,corr,save_path,is_test,fold=0):
         """
         Saves box plot that shows distribution of correlations across all genes
         """

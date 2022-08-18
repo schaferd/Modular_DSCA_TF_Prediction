@@ -523,10 +523,10 @@ for (DE_file in perturbation_files){
   perturbation_id = tail(unlist(strsplit(DE_file, split = '/')),1) %>% gsub('.rdata', '', .) %>% strsplit(., split = '\\.') %>% unlist(.)
   design_file = list.files(design_folder, recursive = T, full.names = T) %>% grep(perturbation_id[1], ., value = T) %>% grep(perturbation_id[2], ., value = T)
   treatment = read_desigfile(design_file)$treatment
-  if (treatment == 'shRNA') {
-	  activities = DEs2activities(DE_file, contrast_folder,design_folder, networks)
-	  analysis_name = gsub('contrasts/', 'activities/global/viper_', DE_file)
-	  save(activities, file = analysis_name)
-  }
+  #if (treatment == 'shRNA') {
+  activities = DEs2activities(DE_file, contrast_folder,design_folder, networks)
+  analysis_name = gsub('contrasts/', 'activities/global/viper_', DE_file)
+  save(activities, file = analysis_name)
+  #}
 }
 

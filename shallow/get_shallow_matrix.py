@@ -1,23 +1,43 @@
 import numpy as np
 
 
-def get_shallow_layer(data_obj):
-        #tf layer to relationship layer
-        xcoords = []
-        ycoords = []
+class Shallow():
+    def __init__(self,data_obj):
+        self.gene_dict = {g: v for v, g in enumerate(data_obj.genes)}
+        self.data_obj = data_obj
+        self.tfs = self.data_obj.tfs
+        self.genes = self.data_obj.genes 
+        self.tf_gene_dict = self.data_obj.tf_gene_dict
 
-        counter = 0
-        #loop through tfs
-        for i,tf in enumerate(data_obj.tfs):
-            #loop through relationships with specified tf
-            for j,gene in enumerate(data_obj.tf_gene_dict[tf][0]):
-                if gene in data_obj.genes:
-                    xcoords.append(gene_dict[gene])
-                    ycoords.append(i)
-                    counter += 1
+        self.gene_dict = {g: v for v, g in enumerate(self.genes)}
+        self.tf_dict = {tf: i for i,tf in enumerate(self.tfs)}
+        self.shallow_layer = self.get_shallow_layer()
 
-        shallow_layer = np.vstack((np.array(xcoords),np.array(ycoords)))
+    def get_shallow_layer(self):
+            #tf layer to relationship layer
+            xcoords = []
+            ycoords = []
+            coords = set() 
 
-        print("shallow layer complete")
-        print(shallow_layer.shape)
-        return shallow_layer
+            for tf,genes in self.tf_gene_dict.items():
+                for g in genes:
+                    xcoords.append(self.gene_dict[g])
+                    ycoords.append(self.tf_dict[tf])
+                    coords.add((self.gene_dict[g],self.tf_dict[tf]))
+
+
+            """
+            #loop through tfs
+            for i,tf in enumerate(self.tfs):
+                #loop through relationships with specified tf
+                for j,gene in enumerate(self.tf_gene_dict[tf][0]):
+                    if gene in self.genes:
+                        xcoords.append(self.gene_dict[gene])
+                        ycoords.append(i)
+                        coords.add((self.gene_dict[gene],i))
+            """
+                        
+
+            shallow_layer = [xcoords,ycoords]
+
+            return shallow_layer
