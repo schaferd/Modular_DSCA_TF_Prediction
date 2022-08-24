@@ -25,10 +25,7 @@ class AEDecoder(nn.Module):
                 self.first_weights = matrices_obj.first_layer 
                 self.final_weights = matrices_obj.final_layer 
                     
-                activ_func = nn.LeakyReLU()
-
-
-
+                activ_func = nn.Tanh()
 
                 decoder = collections.OrderedDict()
 

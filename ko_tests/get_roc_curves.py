@@ -4,16 +4,19 @@ import os
 import pandas as pd
 from sklearn import metrics
 import matplotlib.pyplot as plt
-ae_roc_path = os.path.join(os.path.dirname(__file__),'ae_roc/')
-print(ae_roc_path)
-sys.path.append(ae_roc_path)
-import get_activity_input as gai
 import torch
 import pickle as pkl
 import time
 
 from pyensembl import EnsemblRelease
 ensembl_data = EnsemblRelease(78)
+
+#ae_roc_path = os.path.join(os.path.dirname(__file__),'ae_roc/')
+#sys.path.append(ae_roc_path)
+
+diff_roc_path = os.path.join(os.path.dirname(__file__),'diff_roc/')
+sys.path.append(diff_roc_path)
+import get_activity_input as gai
 
 class getROCCurve():
     def __init__(self,ae_args={}):
@@ -25,7 +28,8 @@ class getROCCurve():
             act_inp_start = time.time()
             obj = gai.ActivityInput(ae_args['embedding'],ae_args['data_dir'],ae_args['knowledge'],ae_args['overlap_genes'],ae_args['ae_input_genes'],ae_args['tf_list'],ae_args['out_dir'])
             print("activity input time:",(time.time()-act_inp_start))
-            self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(obj.save_path) if os.path.isfile('/'.join([obj.save_path,f])) and 'pred_activities' in f}
+            #self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(obj.save_path) if os.path.isfile('/'.join([obj.save_path,f])) and 'pred_activities' in f}
+            self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(obj.save_path) if os.path.isfile('/'.join([obj.save_path,f])) and 'diff_activities' in f}
             activity_dir = obj.save_path
             self.fold = ae_args['fold']
         else:

@@ -6,7 +6,6 @@ import sparselinear as sl
 import collections
 
 from get_shallow_matrix import Shallow
-from gene_grouped_indep import GeneGroupedIndep
 
 class AEEncoder(nn.Module):
 
@@ -19,8 +18,6 @@ class AEEncoder(nn.Module):
 
                 shallow = Shallow(self.data_obj)
                 self.shallow_matrix = shallow.shallow_layer
-                self.shallow_matrix = [self.shallow_matrix[1],self.shallow_matrix[0]]
-
                 self.shallow_matrix = [self.shallow_matrix[1],self.shallow_matrix[0]]
 
                 activ_func = nn.LeakyReLU()

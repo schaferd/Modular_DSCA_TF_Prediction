@@ -13,7 +13,7 @@ if torch.cuda.is_available():
     is_gpu = True
 print("is gpu "+str(is_gpu))
 
-roc_path = os.path.join(os.path.dirname(__file__),'ko_tests/')
+roc_path = os.path.join(os.path.dirname(__file__),'ko_tests/diff_roc/')
 print(roc_path)
 sys.path.insert(1,roc_path)
 from get_roc_curves import getROCCurve
@@ -107,7 +107,7 @@ def get_correlation_between_runs(trained_models,data_loader,save_path):
         return avg_corr, avg_pairwise_corr_list
 
 def get_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0):
-    tf_gene_dict = {tf:data_obj.tf_gene_dict[tf][0] for tf in data_obj.tf_gene_dict.keys()}
+    tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}
     ae_args = {
         'embedding':encoder,
         'overlap_genes': data_obj.overlap_list,

@@ -5,7 +5,6 @@ import sparselinear as sl
 import collections
 
 from get_shallow_matrix import Shallow
-from gene_grouped_indep import GeneGroupedIndep
 
 class AEDecoder(nn.Module):
 
