@@ -44,6 +44,7 @@ class getROCCurve():
         df = pd.concat(activities_list,ignore_index=True)
         samples = np.unique(df['Sample'].to_numpy()).tolist()
         df = pd.pivot_table(df,index=['regulon'],columns =['Sample'],values='activities') 
+        df = df.dropna()
         return df
 
     def rank_matrix(self):
@@ -76,6 +77,7 @@ class getROCCurve():
         observed = self.tfs_of_interest['scaled ranking']
         expected = self.tfs_of_interest['is tf perturbed']+0
 
+
         n_positives = sum(expected == 1)
         n_negatives = sum(expected == 0)
         positives = observed[expected == 1]
@@ -87,6 +89,7 @@ class getROCCurve():
         #print(r_positives)
         #for i in range(len(r_positives)):
         #    print(r_positives[i])
+
 
         auc,fpr,tpr = self.get_aucROC(negatives.tolist(),positives.tolist())
 

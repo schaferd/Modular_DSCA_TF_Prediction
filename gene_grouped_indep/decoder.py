@@ -30,7 +30,7 @@ class AEDecoder(nn.Module):
                 decoder = collections.OrderedDict()
 
                 decoder['decoder_1'] = sl.SparseLinear(max(self.first_weights[1])+1,max(self.first_weights[0])+1,connectivity=torch.tensor(self.first_weights))
-                decoder['decoder_activ1'] = activ_func
+                decoder['decoder_activ1'] = nn.LeakyReLU()
                 #if self.is_bn:
                 #    decoder['bn_decoder1'] = nn.BatchNorm1d(self.decoder_features)
 				

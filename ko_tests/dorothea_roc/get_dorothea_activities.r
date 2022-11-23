@@ -117,7 +117,7 @@ DEs2activities = function(DE_file, design_folder, networks){
 # --------------  
 # -------------- Load and aggregate regulon objects into VIPER Regulon object
 # --------------
-load_and_merge_regulons = function(regulon_files, regulons_folder, filter_TFs = NULL){
+load_and_merge_regulons = function(regulons_folder, filter_TFs = NULL){
   aggregated_networks = list()
   for (n in network_files){
     message(' - ', n)
@@ -238,10 +238,6 @@ write.csv(x = df, file = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC
 # COMPUTE ACTIVITIES
 ############################
 
-#TO DO:
-#UNDERSTAND DF STRUCTURE OF OUTPUT OF VIPER 
-#determine what parts of viper output are used
-#MIMIC DF STRUCTURE WHEN OUTPUTTING OF MY ENCODER
 
 # Set minimum regulon size
 Nmin = 4
@@ -250,9 +246,23 @@ Nmin = 4
 perturbed_TFs = list.dirs(path = design_folder, full.names = F) %>% setdiff(., '')
 
 message('Merging regulons into one object')
-network_files = list.files(regulons_folder, recursive = T, pattern = 'viperRegulon.rdata') %>%
+regulons_folderA = paste(regulons_folder,'/omnipath_scores/A',sep="")
+regulons_folderB = paste(regulons_folder,'/omnipath_scores/B',sep="")
+print("regulons folder A")
+print(regulons_folderA)
+network_files = list.files(regulons_folderA, recursive = T, pattern = 'viperRegulon.rdata')# %>%
+  #grep("specific", ., invert = T, value = T)
+print("network files")
+print(network_files)
+networksA = load_and_merge_regulons(regulons_folderA, filter_TFs = perturbed_TFs)
+network_files = list.files(regulons_folderB, recursive = T, pattern = 'viperRegulon.rdata') %>%
   grep("specific", ., invert = T, value = T)
-networks = load_and_merge_regulons(regulon_files, regulons_folder, filter_TFs = perturbed_TFs)
+networksB = load_and_merge_regulons(regulons_folderB, filter_TFs = perturbed_TFs)
+#network_files = c(network_filesA,network_filesB)
+print(networksA)
+networks = append(networksA, networksB)
+#print(network_files)
+#print(networks)
 
 message('Computing differential activities from DE signatures')
 perturbation_files = list.files(path = contrast_folder, pattern = 'rdata', full.names = T)
@@ -266,15 +276,14 @@ for (DE_file in perturbation_files){
   design_file = list.files(design_folder, recursive = T, full.names = T) %>% grep(perturbation_id[1], ., value = T) %>% grep(perturbation_id[2], ., value = T)
 
   treatment = read_desigfile(design_file)$treatment
-  if (treatment == 'shRNA') {
-	  activities = DEs2activities(DE_file, design_folder, networks)
-	  message("regulon activities")
-	  message(activities$Regulon)
-	  #analysis_name = gsub('contrasts/', 'activities/global/viper_', DE_file)
-	  analysis_name = gsub('rdata', 'viper_pred.csv', DE_file)
-	  print(analysis_name)
-	  write.csv(activities,analysis_name)
-  }
+  #if (treatment == 'shRNA') {
+  activities = DEs2activities(DE_file, design_folder, networks)
+  message("regulon activities")
+  message(activities$Regulon)
+  #analysis_name = gsub('contrasts/', 'activities/global/viper_', DE_file)
+  analysis_name = gsub('rdata', 'viper_pred.csv', DE_file)
+  print(analysis_name)
+  write.csv(activities,analysis_name)
 }
 
 

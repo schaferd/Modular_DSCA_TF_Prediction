@@ -39,7 +39,7 @@ class MOA():
         probe_rows = torch.masked_select(decoder_output[:-1],mask)
 
         diff = (probe_rows-control_row)
-        print("diff",diff)
+        #print("diff",diff)
 
         moa_vals = torch.masked_select(moa_matrix,mask)
 

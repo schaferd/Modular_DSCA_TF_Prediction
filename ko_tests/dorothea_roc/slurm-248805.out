@@ -1,0 +1,69 @@
+Loading required package: pROC
+Type 'citation("pROC")' for a citation.
+
+Attaching package: ‘pROC’
+
+The following objects are masked from ‘package:stats’:
+
+    cov, smooth, var
+
+Loading required package: ROCR
+Loading required package: PRROC
+Loading required package: Biobase
+Loading required package: BiocGenerics
+
+Attaching package: ‘BiocGenerics’
+
+The following object is masked from ‘package:pROC’:
+
+    var
+
+The following objects are masked from ‘package:stats’:
+
+    IQR, mad, sd, var, xtabs
+
+The following objects are masked from ‘package:base’:
+
+    anyDuplicated, append, as.data.frame, basename, cbind, colnames,
+    dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+    grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
+    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
+    union, unique, unsplit, which.max, which.min
+
+Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with
+    'browseVignettes()'. To cite Bioconductor, see
+    'citation("Biobase")', and for packages 'citation("pkgname")'.
+
+is_TF_DE_expected
+FALSE  TRUE 
+   69   131 
+ ARNTL2   CEBPA   CLOCK    DLX4    E2F1    E2F1    E2F1    E2F6    EGR3   EPAS1 
+      4      10      12      15      16      17      18      19      20      25 
+  FOXA1   FOXC2   FOXP1   FOXP1   GATA2   GATA3   GATA3    GLI1  HIVEP2   HNF1A 
+     40      41      46      47      49      50      51      53      59      61 
+  HNF1B   HOXA9    IRF9   MECOM    MITF     MYB     MYB     MYC     MYC     MYC 
+     62      65      75      82      85      87      88      91      93      94 
+   MYCN   NANOG NEUROG1  NFE2L1   NFKB1   NFKB1   NFKB2  NKX2-1  NKX2-1  NKX2-8 
+     96      98      99     100     102     104     105     108     109     110 
+  NR4A1    PAX3    PAX5    PAX9  POU5F1  POU5F1   PPARA   PPARA    RARA    REST 
+    113     117     118     119     124     126     127     128     130     133 
+  RUNX1   RUNX1   RUNX1   SNAI1   SNAI1    SOX2    SOX4    SOX7    SOX7  SREBF2 
+    134     135     136     139     140     144     147     148     149     153 
+  STAT3    TLX1    TP63  TWIST1    USF1   WHSC1    XBP1     YY2  ZNF658 
+    157     170     173     177     178     180     184     187     197 
+is_TF_DE_opposite
+FALSE  TRUE 
+  190    10 
+ CEBPA  FOXP1  GATA3 HIVEP2  HOXA9   MITF   PAX3 POU5F1   RARA   SOX2 
+    10     47     50     59     65     85    117    126    130    144 
+is_TF_in_array
+FALSE  TRUE 
+   10   190 
+  E2F6   IRF9 NFE2L1  NFKB2   PAX5  RUNX1  RUNX1  WHSC1    YY2 ZNF658 
+    19     75    100    105    118    135    136    180    187    197 
+Merging regulons into one object
+Error: object 'network_filesA' not found
+Execution halted

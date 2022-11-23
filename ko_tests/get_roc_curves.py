@@ -27,11 +27,13 @@ class getROCCurve():
         if len(self.ae_args.keys()) > 0:
             act_inp_start = time.time()
             obj = gai.ActivityInput(ae_args['embedding'],ae_args['data_dir'],ae_args['knowledge'],ae_args['overlap_genes'],ae_args['ae_input_genes'],ae_args['tf_list'],ae_args['out_dir'])
+            obj.get_activities()
             print("activity input time:",(time.time()-act_inp_start))
             #self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(obj.save_path) if os.path.isfile('/'.join([obj.save_path,f])) and 'pred_activities' in f}
             self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(obj.save_path) if os.path.isfile('/'.join([obj.save_path,f])) and 'diff_activities' in f}
             activity_dir = obj.save_path
             self.fold = ae_args['fold']
+            self.cycle = ae_args['cycle']
         else:
             viper_activity_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/contrasts/'
             self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(viper_activity_dir) if os.path.isfile('/'.join([viper_activity_dir,f])) and 'viper_pred.csv' in f}
@@ -133,7 +135,7 @@ class getROCCurve():
         plt.ylabel("True Positive Rate")
         plt.title("ROC Curve (area = %0.2f)"%auc)
         if len(self.ae_args.keys()) > 0:
-            plt.savefig(self.ae_args['out_dir']+"/roc_ae_fold"+str(self.fold)+".png")
+            plt.savefig(self.ae_args['out_dir']+"/roc_ae_cycle"+str(self.cycle)+"_fold"+str(self.fold)+".png")
         else:
             plt.savefig('roc_viper.png')
 

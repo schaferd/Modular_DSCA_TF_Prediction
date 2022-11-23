@@ -13,14 +13,14 @@ class DataProcessing():
                 self.sparse_data_file = sparse_data.split("/")[-1]
                 self.sparse_data = pd.read_csv(sparse_data, sep='\t', low_memory=False)
                 self.sparse_data = self.sparse_data.dropna()
-
                 self.batch_size = batch_size
                 self.relationships_filter = relationships_filter
+                self.input_data = pd.read_pickle(input_data)
+
 
                 self.tf_gene_dict = {}
                 self.gene_tf_dict = {}
 
-                self.input_data = pd.read_pickle(input_data)
 
                 self.sparse_genes = np.unique(self.sparse_data.loc[:,'target'])
                 """
@@ -74,7 +74,7 @@ class DataProcessing():
                 genes_to_remove = set() 
                 tfs_to_remove = set()
                 for tf,vals in self.tf_gene_dict.items():
-                    if len(vals) < self.relationships_filter or len(vals) > 300:
+                    if len(vals) < self.relationships_filter or len(vals) > 500:
                         tfs_to_remove.add(tf)
 
                 """
@@ -94,9 +94,6 @@ class DataProcessing():
                 self.gene_tf_dict = {gene:val for gene,val in self.gene_tf_dict.items() if gene not in genes_to_remove}
                 self.tf_gene_dict = {tf:val for tf,val in self.tf_gene_dict.items() if tf not in tfs_to_remove}
                 self.overlapping_genes = set(self.gene_tf_dict.keys())
-
-                
-                
 
                 #self.tfs = np.sort(np.unique(self.sparse_data.loc[:,'tf']))
                 self.tfs = np.sort(np.unique(np.array(list(self.tf_gene_dict.keys()))))
@@ -193,5 +190,29 @@ class DataProcessing():
                 except:
                         ensembl_id = None
                 return ensembl_id
+
+        def get_random_relationships(self):
+            tf_gene_rels = {}
+            gene_tf_rels = {}
+            used_genes = set()
+            remaining_genes = set(self.genes)
+            for tf in self.tfs:
+                if len(remaining_genes) == 0:
+                    tf_gene_rels[tf] = random.sample(self.genes,self.relationships_filter)
+                elif len(remaining_genes)-self.relationships_filter < self.relationships_filter:
+                    tf_gene_rels[tf] = list(reamining_genes)
+                    remaining_genes = set()
+                else:
+                    tf_gene_rels[tf] = random.sample(remaining_genes,self.relationships_filter)
+                    remaining_genes -= set(tf_gene_rels[tf])
+
+                for g in tf_gene_rels[tf]:
+                    if g not in gene_tf_rels:
+                        gene_tf_rels[g] = []
+                    gene_tf_rels[g].append(tf)
+            return tf_gene_rels,gene_tf_rels
+
+                    
+
 
 

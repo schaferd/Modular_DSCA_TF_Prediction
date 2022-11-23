@@ -43,6 +43,7 @@ class AEEncoder(nn.Module):
                 if self.is_bn:
                     encoder['bn_embedding'] = nn.BatchNorm1d(max(self.final_weights[0])+1,affine=True)
 
+                #encoder['embedding_activ'] = nn.ReLU()
                 self.encoder = nn.Sequential(encoder)
 
 

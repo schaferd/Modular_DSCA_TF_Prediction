@@ -42,6 +42,9 @@ class AEDecoder(nn.Module):
                 #if self.dropout_rate > 0:
                 #    middle_layers['do_decoder'+str(i+2)] = nn.Dropout(self.dropout_rate)
 
+                #decoder['decoder_3'] = sl.SparseLinear(max(self.middle_weights[1])+1,max(self.middle_weights[0])+1,connectivity=torch.tensor(self.middle_weights))
+                #decoder['decoder_activ3'] = nn.Tanh()
+
                 decoder['output'] = sl.SparseLinear(max(self.final_weights[1])+1,max(self.final_weights[0])+1,connectivity=torch.tensor(self.final_weights))                
                 #decoder['output_activ'] = activ_func
                 #if self.is_bn:

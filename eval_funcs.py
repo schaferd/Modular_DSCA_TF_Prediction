@@ -18,6 +18,15 @@ print(roc_path)
 sys.path.insert(1,roc_path)
 from get_roc_curves import getROCCurve
 
+roc_path = os.path.join(os.path.dirname(__file__),'essentiality/')
+print(roc_path)
+sys.path.insert(1,roc_path)
+from get_roc_curves import getROCCurve as eROC
+
+comp_path = os.path.join(os.path.dirname(__file__),'comp_dorothea/')
+sys.path.append(comp_path)
+from get_comp import getComp
+
 is_gpu = False
 if torch.cuda.is_available():
     device = torch.device('cuda:0')
@@ -106,7 +115,7 @@ def get_correlation_between_runs(trained_models,data_loader,save_path):
 
         return avg_corr, avg_pairwise_corr_list
 
-def get_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0):
+def get_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
     tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}
     ae_args = {
         'embedding':encoder,
@@ -116,7 +125,40 @@ def get_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0):
         'ae_input_genes':data_obj.input_genes,
         'tf_list':data_obj.tfs,
         'out_dir':save_path,
-        'fold':fold
+        'fold':fold,
+        'cycle':cycle
     }
     obj = getROCCurve(ae_args=ae_args)
-    return obj.auc
+    return obj.auc, obj.diff_activities, obj.scaled_rankings
+
+def get_essentiality_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
+    tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}
+    ae_args = {
+        'embedding':encoder,
+        'overlap_genes': data_obj.overlap_list,
+        'knowledge':tf_gene_dict,
+        'data_dir':roc_data_path,
+        'ae_input_genes':data_obj.input_genes,
+        'tf_list':data_obj.tfs,
+        'out_dir':save_path,
+        'fold':fold,
+        'cycle':cycle
+    }
+    obj = eROC(ae_args=ae_args)
+    return obj.auc, obj.diff_activities, obj.scaled_rankings
+
+def comp_dorothea(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
+    tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}
+    ae_args = {
+        'embedding':encoder,
+        'overlap_genes': data_obj.overlap_list,
+        'knowledge':tf_gene_dict,
+        'data_dir':roc_data_path,
+        'ae_input_genes':data_obj.input_genes,
+        'tf_list':data_obj.tfs,
+        'out_dir':save_path,
+        'fold':fold,
+        'cycle':cycle
+    }
+    obj = getComp(ae_args=ae_args)
+    return obj

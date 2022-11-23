@@ -14,8 +14,8 @@ ensembl_data = EnsemblRelease(78)
 #ae_roc_path = os.path.join(os.path.dirname(__file__),'ae_roc/')
 #sys.path.append(ae_roc_path)
 
-diff_roc_path = os.path.join(os.path.dirname(__file__),'diff_roc/')
-sys.path.append(diff_roc_path)
+#diff_roc_path = os.path.join(os.path.dirname(__file__),'diff_roc/')
+#sys.path.append(diff_roc_path)
 import get_activity_input as gai
 
 class getROCCurve():
@@ -24,20 +24,23 @@ class getROCCurve():
         self.activity_files = None
         activity_dir = None
         self.fold = None
+        self.cycle = None
         if len(self.ae_args.keys()) > 0:
             obj = gai.ActivityInput(ae_args['embedding'],ae_args['data_dir'],ae_args['knowledge'],ae_args['overlap_genes'],ae_args['ae_input_genes'],ae_args['tf_list'],ae_args['out_dir'])
+            obj.get_activities()
             #self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(obj.save_path) if os.path.isfile('/'.join([obj.save_path,f])) and 'diff_activities' in f}
             self.activity_file = obj.out_dir+'/diff_activities.csv'
             activity_dir = obj.out_dir
             self.fold = ae_args['fold']
+            self.cycle = ae_args['cycle']
         else:
             viper_activity_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/contrasts/'
             self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(viper_activity_dir) if os.path.isfile('/'.join([viper_activity_dir,f])) and 'viper_pred.csv' in f}
             activity_dir = viper_activity_dir
         #self.activities = {f:self.load_activity_file(''.join([activity_dir,self.activity_files[f]]),f)  for f in self.activity_files}
         self.diff_activities = self.load_diff_activities(self.activity_file)
-        self.scaled_rankings = self.rank_matrix()
-        self.perturbation_df = self.get_perturbation_info()
+        self.scaled_rankings,self.rankings = self.rank_matrix()
+        self.perturbation_df,self.unscaled_rank_df = self.get_perturbation_info()
         self.tfs_of_interest = self.get_tfs_of_interest()
         self.auc = self.get_roc()
 
@@ -60,10 +63,13 @@ class getROCCurve():
     def rank_matrix(self):
         pert_tfs = list(self.diff_activities.index)
         ranked_matrix = self.diff_activities.rank(axis = 1,method='min',na_option='keep',ascending=True)
+        print('tfs', len(self.diff_activities.columns))
         ranked_matrix = ranked_matrix.reset_index(drop=True)
         scaled_rank_matrix = (ranked_matrix.T/ranked_matrix.max(axis=1)).T
         scaled_rank_matrix.index = pert_tfs
-        return scaled_rank_matrix
+        print('scaled rank matrix')
+        print(scaled_rank_matrix)
+        return scaled_rank_matrix, ranked_matrix
 
     def get_perturbation_info(self):
         rank_df = pd.melt(self.scaled_rankings,value_vars=self.scaled_rankings.columns,ignore_index=False)
@@ -71,12 +77,18 @@ class getROCCurve():
         rank_df = rank_df.reset_index(drop=True)
         rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
         rank_df.rename({'variable':'regulon'},axis=1,inplace=True)
+
+        unscaled_rank_df = pd.melt(self.rankings,value_vars=self.scaled_rankings.columns,ignore_index=False)
+        unscaled_rank_df['perturbed tf'] = unscaled_rank_df.index
+        unscaled_rank_df = unscaled_rank_df.reset_index(drop=True)
+        unscaled_rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
+        unscaled_rank_df.rename({'variable':'regulon'},axis=1,inplace=True)
         #activity_df = pd.melt(self.diff_activities,value_vars=self.scaled_rankings.columns,ignore_index=False)
         #activity_df.rename({'value':'pred activity'},axis=1,inplace=True)
         #rank_df['pred activity'] = activity_df['pred activity']
         #per_list = [name.split('.')[0] for name in rank_df['Sample'].tolist()]
         #rank_df['perturbed tf'] = per_list
-        return rank_df
+        return rank_df, unscaled_rank_df
 
     def get_tfs_of_interest(self):
         df_tf_of_interest = self.perturbation_df.copy()
@@ -87,6 +99,10 @@ class getROCCurve():
         tfs_of_interest = list(pert_tfs.intersection(pred_tfs))
         df_tf_of_interest = df_tf_of_interest[df_tf_of_interest['regulon'].isin(tfs_of_interest)]
         df_tf_of_interest['is tf perturbed'] = (df_tf_of_interest['regulon'] == df_tf_of_interest['perturbed tf'])
+        print(df_tf_of_interest['is tf perturbed'])
+        print('koed tfs df')
+        koed_tfs_df = df_tf_of_interest.loc[df_tf_of_interest['is tf perturbed'] == True]
+        print(koed_tfs_df)
         return df_tf_of_interest
 
     def get_roc(self):
@@ -136,7 +152,7 @@ class getROCCurve():
         plt.ylabel("True Positive Rate")
         plt.title("ROC Curve (area = %0.2f)"%auc)
         if len(self.ae_args.keys()) > 0:
-            plt.savefig(self.ae_args['out_dir']+"/roc_ae_fold"+str(self.fold)+".png")
+            plt.savefig(self.ae_args['out_dir']+"/roc_ae_cycle_"+str(self.cycle)+"_fold"+str(self.fold)+".png")
         else:
             plt.savefig('roc_viper.png')
 

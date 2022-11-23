@@ -79,8 +79,17 @@ then
 	echo decoder_path $decoder_path
 fi
 
-python3 $curr_path/train.py --epochs $EPOCHS --save_path $SAVE_PATH --save_figs $SAVE_FIGS --learning_rate $LEARNING_RATE --fig_freq $FIG_FREQ --model_type $MODEL_TYPE --l2 $L2 --dropout $DROPOUT --save_model $SAVE_MODEL --sparse_data_path=$SPARSE_DATA_PATH --input_data_path=$INPUT_DATA --batch_size $BATCH_SIZE --lr_sched $LR_SCHED --batch_norm $BATCH_NORM --moa $MOA --warm_restart $WARM_RESTART --max_lr $MAX_LR_SCHED --k_splits $SPLITS --width_multiplier $WIDTH_MULTIPLIER --relationships_filter $RELATIONSHIPS_FILTER --moa_beta $MOA_BETA --moa_subset $MOA_SUBSET --roc_data_path $ROC_DATA_PATH --record $RECORD --record_path $RECORD_PATH
-
+if [ "$RANDOM_INDEP_ENCODER" = true ] ;
+then
+	export encoder_path=$random_indep/
+	echo encoder_path $encoder_path
+fi
+if [ "$RANDOM_INDEP_DECODER" = true ] ;
+then
+	export decoder_path=$random_indep/
+	echo decoder_path $decoder_path
+fi
+python3 $curr_path/train.py --epochs $EPOCHS --save_path $SAVE_PATH --save_figs $SAVE_FIGS --learning_rate $LEARNING_RATE --fig_freq $FIG_FREQ --model_type $MODEL_TYPE --l2 $L2 --dropout $DROPOUT --save_model $SAVE_MODEL --sparse_data_path=$SPARSE_DATA_PATH --input_data_path=$INPUT_DATA --batch_size $BATCH_SIZE --lr_sched $LR_SCHED --batch_norm $BATCH_NORM --moa $MOA --warm_restart $WARM_RESTART --max_lr $MAX_LR_SCHED --k_splits $SPLITS --width_multiplier $WIDTH_MULTIPLIER --relationships_filter $RELATIONSHIPS_FILTER --moa_beta $MOA_BETA --moa_subset $MOA_SUBSET --roc_data_path $ROC_DATA_PATH --record $RECORD --record_path $RECORD_PATH --cycles $CYCLES
 
 
 

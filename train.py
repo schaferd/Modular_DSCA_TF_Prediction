@@ -22,10 +22,12 @@ import shutil
 import pickle as pkl
 from data_class import CellTypeDataset
 from ae_model import AE
-from eval_funcs import get_correlation,get_correlation_between_runs,get_roc_curve
-from figures import plot_input_vs_output,create_test_vs_train_plot,create_corr_hist,create_moa_figs
+from eval_funcs import get_correlation,get_correlation_between_runs,get_ko_roc_curve, comp_dorothea#, get_essentiality_roc_curve
+from figures import plot_input_vs_output,create_test_vs_train_plot,create_corr_hist,create_moa_figs,TF_ko_heatmap
 
 from data_processing import DataProcessing
+from check_consistency_ko import Consistency
+
 
 #device = torch.device('cpu')
 is_gpu = False
@@ -62,6 +64,8 @@ class Train():
         self.record_path = self.param_dict["record_path"]
 
         self.epochs = self.param_dict["epochs"]
+        self.cycles = self.param_dict["cycles"]
+        self.cycle = 0
         self.batch_size = self.param_dict["batch_size"]
         self.lr = self.param_dict["lr"]
         self.lr_sched = self.param_dict["lr_sched"]
@@ -115,6 +119,8 @@ class Train():
         self.moa_violation_count_train = []
         self.embedding_losses = []
         self.trained_models = []
+        self.aucs = []
+        self.ko_activity_dirs = []
 
         self.trained_embedding_model = None
 
@@ -145,7 +151,7 @@ class Train():
             m.bias.data.fill_(0.1)
 
 
-    def get_trained_model(self,train_loader,test_loader,fold_num=0,):
+    def get_trained_model(self,train_loader,test_loader,fold_num=0):
         """
         Trains and returns train loss, test loss and correlation
         saves entire model, encoder model, figures and correlation if specified
@@ -155,6 +161,13 @@ class Train():
             print("saving at "+str(self.get_save_path()))
         else:
             print("NOT saving at "+str(self.get_save_path()))
+
+        self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier).to(device)
+        self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier).to(device)
+        self.model = AE(self.encoder,self.decoder)
+
+        self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
+        self.criterion = nn.MSELoss()
 
         self.model.encoder.apply(self.init_weights)
         self.model.decoder.apply(self.init_weights)
@@ -180,8 +193,8 @@ class Train():
                 #if self.save_model:
                 #    torch.save(self.model.module.encoder,self.get_save_path()+"/model_encoder_fold"+str(fold_num)+"_epoch_"+str(epoch)+".pth")
                 if self.moa > 0:
-                        create_moa_figs(self.moa_train_losses,self.moa_test_losses,self.moa_violation_count_train,self.moa_violation_count_test,self.get_save_path(),fold=fold_num)
-                create_test_vs_train_plot(self.training_losses,self.test_losses,self.get_save_path(),fold_num)
+                        create_moa_figs(self.moa_train_losses,self.moa_test_losses,self.moa_violation_count_train,self.moa_violation_count_test,self.get_save_path(),fold=fold_num,cycle=self.cycle)
+                create_test_vs_train_plot(self.training_losses,self.test_losses,self.get_save_path(),fold_num,cycle=self.cycle)
         
         
         self.trained_embedding_model = self.model.encoder
@@ -196,21 +209,29 @@ class Train():
 
         auc = 0
         if self.save_model:
-            torch.save(self.model.encoder,self.get_save_path()+"/model_encoder_fold"+str(fold_num)+".pth")
-            corr_file = open(self.get_save_path()+"/corr_fold"+str(fold_num),'w+')
+            torch.save(self.model.encoder,self.get_save_path()+"/model_encoder_cycle"+str(self.cycle)+"_fold"+str(fold_num)+".pth")
+            corr_file = open(self.get_save_path()+"/corr_cycle"+str(self.cycle)+"_fold"+str(fold_num),'w+')
             corr_file.write(str(correlation)+"\n")
             corr_file.write(str(corr_list))
             corr_file.close()
         if self.save_figs:
             self.save_train_test_loss_data()
             if self.moa > 0:
-                    create_moa_figs(self.moa_train_losses,self.moa_test_losses,self.moa_violation_count_train,self.moa_violation_count_test,self.get_save_path(),fold=fold_num)
-            create_test_vs_train_plot(self.training_losses,self.test_losses,self.get_save_path(),fold_num)
-            plot_input_vs_output(input_list,output_list,correlation,False,self.get_save_path(),fold=fold_num)
-            plot_input_vs_output(test_input_list,test_output_list,test_correlation,True,self.get_save_path(),fold=fold_num)
-            create_corr_hist(corr_list,correlation,self.get_save_path(),False,fold=fold_num)
-            create_corr_hist(test_corr_list,test_correlation,self.get_save_path(),True,fold=fold_num)
-            auc = get_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,self.get_save_path(),fold=fold_num)
+                    create_moa_figs(self.moa_train_losses,self.moa_test_losses,self.moa_violation_count_train,self.moa_violation_count_test,self.get_save_path(),fold=fold_num,cycle=self.cycle)
+            create_test_vs_train_plot(self.training_losses,self.test_losses,self.get_save_path(),fold_num,cycle=self.cycle)
+            plot_input_vs_output(input_list,output_list,correlation,False,self.get_save_path(),fold=fold_num,cycle=self.cycle)
+            plot_input_vs_output(test_input_list,test_output_list,test_correlation,True,self.get_save_path(),fold=fold_num,cycle=self.cycle)
+            create_corr_hist(corr_list,correlation,self.get_save_path(),False,fold=fold_num,cycle=self.cycle)
+            create_corr_hist(test_corr_list,test_correlation,self.get_save_path(),True,fold=fold_num,cycle=self.cycle)
+            ko_activity_dir = self.get_save_path()+'/ko_activities_cycle'+str(self.cycle)+'_fold'+str(fold_num)
+            self.ko_activity_dirs.append(ko_activity_dir)
+            if not os.path.exists(ko_activity_dir):
+                os.makedirs(ko_activity_dir)
+            auc,  activity_df,ranked_df = get_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            self.aucs.append(auc)
+            #comp_dorothea(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            TF_ko_heatmap(ranked_df,self.get_save_path(),'ranked_df',fold=fold_num,cycle=self.cycle)
+            TF_ko_heatmap(activity_df,self.get_save_path(),'activity_df',fold=fold_num,cycle=self.cycle)
         if self.moa > 0:
                 self.moa_test_losses = []
                 self.moa_train_losses = []
@@ -233,6 +254,7 @@ class Train():
         for samples, labels in train_loader:
 
             samples = samples.to(device)
+            print(samples.shape)
 
             self.optimizer.zero_grad(set_to_none=True)
             
@@ -427,39 +449,60 @@ class Train():
         new_df.to_pickle(self.record_path)
 
     def cross_validation(self,k_splits):
-        dataset = self.data_obj.get_input_data()
-        splits, train_splits, test_splits, validation_split = self.data_obj.get_split_indices(dataset,k_splits) 
-        dataset = dataset.sample(frac=1)
-        for fold in range(k_splits): 
-                prep_data_start = time.time()
-                print('Fold {}'.format(fold + 1))
-                train_data, test_data = self.data_obj.get_train_test_data(fold,k_splits,dataset,splits,train_splits,test_splits)
-                train_data_celltype = CellTypeDataset(train_data,self.data_obj.get_output_data(train_data))
-                test_data_celltype = CellTypeDataset(test_data,self.data_obj.get_output_data(test_data))
+        for cycle in range(self.cycles):
+            dataset = self.data_obj.get_input_data()
+            splits, train_splits, test_splits, validation_split = self.data_obj.get_split_indices(dataset,k_splits) 
+            dataset = dataset.sample(frac=1)
 
-                kwargs = {'num_workers':0,'pin_memory':True} if is_gpu == True else {}
+            self.cycle = cycle
+            self.train_output = None
+            self.test_output = None
+            self.train_error = None
+            self.test_error = None
 
-                train_loader = torch.utils.data.DataLoader(train_data_celltype, batch_size=batch_size, **kwargs)
-                test_loader = torch.utils.data.DataLoader(test_data_celltype, batch_size=batch_size, **kwargs)
+            self.training_losses = [[]]
+            self.test_losses = [[]]
+
+            self.moa_train_losses = []
+            self.moa_test_losses = []
+            self.moa_violation_count_test = []
+            self.moa_violation_count_train = []
+            self.embedding_losses = []
+            self.trained_models = []
+
+            for fold in range(k_splits): 
+                    prep_data_start = time.time()
+                    print('Fold {}'.format(fold + 1))
+                    train_data, test_data = self.data_obj.get_train_test_data(fold,k_splits,dataset,splits,train_splits,test_splits)
+                    train_data_celltype = CellTypeDataset(train_data,self.data_obj.get_output_data(train_data))
+                    test_data_celltype = CellTypeDataset(test_data,self.data_obj.get_output_data(test_data))
+
+                    kwargs = {'num_workers':0,'pin_memory':True} if is_gpu == True else {}
+
+                    train_loader = torch.utils.data.DataLoader(train_data_celltype, batch_size=batch_size,drop_last=True, **kwargs)
+                    test_loader = torch.utils.data.DataLoader(test_data_celltype, batch_size=batch_size,drop_last=True, **kwargs)
 
 
-                if self.lr_sched:
-                    self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer,max_lr=self.max_lr,epochs=self.epochs,steps_per_epoch=len(train_loader))
+                    if self.lr_sched:
+                        self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer,max_lr=self.max_lr,epochs=self.epochs,steps_per_epoch=len(train_loader))
 
-                loss_list = []
-                corr_list = []
-                print("prep data time "+str(time.time()-prep_data_start))
-                get_trained_model_start = time.time()
-                train_loss,test_loss, corr = self.get_trained_model(train_loader,test_loader,fold)
-                print("get trained model time "+str(time.time()-get_trained_model_start))
-                loss_list.append(test_loss)
-                corr_list.append(corr)
+                    loss_list = []
+                    corr_list = []
+                    train_loss,test_loss, corr = self.get_trained_model(train_loader,test_loader,fold)
+                    loss_list.append(test_loss)
+                    corr_list.append(corr)
+                    #consistency_obj.get_output(self.trained_embedding_model)
+                    #consistency_obj.save_output_data(self.trained_embedding_model,self.decoder)
+                    #consistency_obj.make_random_cv()
 
-        if k_splits > 1:
-                validation_data = dataset.iloc[validation_split[0]:validation_split[1]]
-                validation_data_celltype = CellTypeDataset(validation_data,self.data_obj.get_output_data(validation_data))
-                validation_loader = torch.utils.data.DataLoader(validation_data_celltype,batch_size=batch_size)
-                get_correlation_between_runs(self.trained_models,validation_loader,self.get_saved_path())
+
+        with open(self.get_save_path()+'/aucs.pkl','wb+') as f:
+            pkl.dump(self.aucs,f)
+
+            #if k_splits > 1:
+            #        validation_data = dataset.iloc[validation_split[0]:validation_split[1]]
+            #        validation_data_celltype = CellTypeDataset(validation_data,self.data_obj.get_output_data(validation_data))
+            #        validation_loader = torch.utils.data.DataLoader(validation_data_celltype,batch_size=batch_size)
 
 
 
@@ -496,6 +539,8 @@ if __name__ == "__main__":
         parser.add_argument('--record',type=str,required=False,default=False,help="true if you want results to recorded in record table")
         parser.add_argument('--record_path',type=str,required=True,help="where you want to keep the record/where record is kept")
 
+        parser.add_argument('--cycles',type=int,required=True)
+
         args = parser.parse_args()
 
         epochs = args.epochs 
@@ -528,6 +573,8 @@ if __name__ == "__main__":
         moa = args.moa
 
         roc_data_path = args.roc_data_path
+
+        cycles = args.cycles
 
         record = args.record.lower() == 'true'
         record_path = args.record_path.lower()
@@ -565,12 +612,16 @@ if __name__ == "__main__":
             "roc_data_path":roc_data_path,
 
             "record":record,
-            "record_path":record_path
+            "record_path":record_path,
+            "cycles":cycles
         }
         train = Train(hyper_params)
 
-        entire_train_process_start = time.time()
         train.cross_validation(k)
-        print("entire train process "+str(time.time()-entire_train_process_start))
+        c = Consistency(train.get_save_path(),train.ko_activity_dirs)
+        #cv = c.encoder_dist()
+        #c.plot_dist()
+
+
 
 

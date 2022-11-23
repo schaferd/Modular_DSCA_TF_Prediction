@@ -1,0 +1,45 @@
+is gpu 1True
+observed
+0        0.921053
+1        0.210526
+2        0.855263
+3        0.289474
+4        0.223684
+           ...   
+15195    0.736842
+15196    0.960526
+15197    0.671053
+15198    0.842105
+15199    0.986842
+Name: scaled ranking, Length: 15200, dtype: float64
+expected
+0        1
+1        0
+2        0
+3        0
+4        0
+        ..
+15195    0
+15196    0
+15197    0
+15198    0
+15199    0
+Name: is tf perturbed, Length: 15200, dtype: int64
+Traceback (most recent call last):
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/get_roc_curves_files.py", line 148, in <module>
+    obj = getROCCurve(ae_args={})
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/get_roc_curves_files.py", line 32, in __init__
+    self.get_roc()
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/get_roc_curves_files.py", line 97, in get_roc
+    auc,fpr,tpr = self.get_aucROC(negatives.tolist(),positives.tolist())
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/get_roc_curves_files.py", line 114, in get_aucROC
+    fpr,tpr,thresholds = metrics.roc_curve(target,obs)
+  File "/nobackup/users/schaferd/anaconda3/envs/ae_train3/lib/python3.9/site-packages/sklearn/metrics/_ranking.py", line 979, in roc_curve
+    fps, tps, thresholds = _binary_clf_curve(
+  File "/nobackup/users/schaferd/anaconda3/envs/ae_train3/lib/python3.9/site-packages/sklearn/metrics/_ranking.py", line 744, in _binary_clf_curve
+    assert_all_finite(y_score)
+  File "/nobackup/users/schaferd/anaconda3/envs/ae_train3/lib/python3.9/site-packages/sklearn/utils/validation.py", line 180, in assert_all_finite
+    _assert_all_finite(
+  File "/nobackup/users/schaferd/anaconda3/envs/ae_train3/lib/python3.9/site-packages/sklearn/utils/validation.py", line 146, in _assert_all_finite
+    raise ValueError(msg_err)
+ValueError: Input contains NaN.

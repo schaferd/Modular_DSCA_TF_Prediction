@@ -1,3 +1,6 @@
+library(viper)
+
+
 read_desigfile = function(design_file){
   x = t(read.delim(design_file, header = F, sep = '\t'))
   colnames(x) = x[1,]
@@ -17,6 +20,7 @@ design_to_avgExp = function(sample,genes,exp,des,design_file,out_dir,tf){
   
   n_outfile = paste(tf,gsub('.txt','',design_file),'negative.csv',sep='_')
   write.table(n_df,file=paste(out_dir,n_outfile,sep='/'))
+  n_mrs = msviper
   
   p_outfile = paste(tf,gsub('.txt','',design_file),'positive.csv',sep='_')
   write.table(p_df,file=paste(out_dir,p_outfile,sep='/'))
@@ -57,11 +61,8 @@ get_output_files = function(design_dir,norm_dir,out_dir){
   }
 }
 
-norm_dir = '/home/bagel/Documents/ae_data/normalized/'
-design_dir = '/home/bagel/Documents/ae_data/design/'
-design_tf = 'AR'
-design_file = 'GSE11428.txt'
-out_dir = '/home/bagel/Documents/ae_out/'
-#design_to_avgExp(design_dir,design_tf,design_file,norm_dir,out_dir)
+norm_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/normalized/'
+design_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/design/'
+out_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/'
 get_output_files(design_dir,norm_dir,out_dir)
 

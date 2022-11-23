@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/diff_roc/ko_data_processing.py", line 100, in <module>
+    obj = ActivityInput(data_dir,ae_input_genes)
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/diff_roc/ko_data_processing.py", line 22, in __init__
+    pos_df,neg_df = self.get_pos_neg_matrices()
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/diff_roc/ko_data_processing.py", line 44, in get_pos_neg_matrices
+    pos_neg_df = pd.apply(zscore)
+  File "/nobackup/users/schaferd/anaconda3/envs/ae_train3/lib/python3.9/site-packages/pandas/__init__.py", line 261, in __getattr__
+    raise AttributeError(f"module 'pandas' has no attribute '{name}'")
+AttributeError: module 'pandas' has no attribute 'apply'
