@@ -39,8 +39,11 @@ class getROCCurve():
             activity_dir = viper_activity_dir
         #self.activities = {f:self.load_activity_file(''.join([activity_dir,self.activity_files[f]]),f)  for f in self.activity_files}
         self.diff_activities = self.load_diff_activities(self.activity_file)
+        with open(obj.out_dir+'/ko_tf_index.pkl','rb') as f:
+            self.index_to_ko_tfs = pkl.load(f)
         self.scaled_rankings,self.rankings = self.rank_matrix()
-        self.perturbation_df,self.unscaled_rank_df = self.get_perturbation_info()
+        #self.perturbation_df,self.unscaled_rank_df = self.get_perturbation_info()
+        self.perturbation_df = self.get_perturbation_info()
         self.tfs_of_interest = self.get_tfs_of_interest()
         self.auc = self.get_roc()
 
@@ -73,22 +76,22 @@ class getROCCurve():
 
     def get_perturbation_info(self):
         rank_df = pd.melt(self.scaled_rankings,value_vars=self.scaled_rankings.columns,ignore_index=False)
-        rank_df['perturbed tf'] = rank_df.index
+        rank_df['perturbed tf'] = [self.index_to_ko_tfs[i] for i in rank_df.index]
         rank_df = rank_df.reset_index(drop=True)
         rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
         rank_df.rename({'variable':'regulon'},axis=1,inplace=True)
 
-        unscaled_rank_df = pd.melt(self.rankings,value_vars=self.scaled_rankings.columns,ignore_index=False)
-        unscaled_rank_df['perturbed tf'] = unscaled_rank_df.index
-        unscaled_rank_df = unscaled_rank_df.reset_index(drop=True)
-        unscaled_rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
-        unscaled_rank_df.rename({'variable':'regulon'},axis=1,inplace=True)
+        #unscaled_rank_df = pd.melt(self.rankings,value_vars=self.scaled_rankings.columns,ignore_index=False)
+        #unscaled_rank_df['perturbed tf'] = unscaled_rank_df.index
+        #unscaled_rank_df = unscaled_rank_df.reset_index(drop=True)
+        #unscaled_rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
+        #unscaled_rank_df.rename({'variable':'regulon'},axis=1,inplace=True)
         #activity_df = pd.melt(self.diff_activities,value_vars=self.scaled_rankings.columns,ignore_index=False)
         #activity_df.rename({'value':'pred activity'},axis=1,inplace=True)
         #rank_df['pred activity'] = activity_df['pred activity']
         #per_list = [name.split('.')[0] for name in rank_df['Sample'].tolist()]
         #rank_df['perturbed tf'] = per_list
-        return rank_df, unscaled_rank_df
+        return rank_df#, unscaled_rank_df
 
     def get_tfs_of_interest(self):
         df_tf_of_interest = self.perturbation_df.copy()

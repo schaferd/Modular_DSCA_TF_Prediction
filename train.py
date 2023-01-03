@@ -24,6 +24,7 @@ from data_class import CellTypeDataset
 from ae_model import AE
 from eval_funcs import get_correlation,get_correlation_between_runs,get_ko_roc_curve, comp_dorothea#, get_essentiality_roc_curve
 from figures import plot_input_vs_output,create_test_vs_train_plot,create_corr_hist,create_moa_figs,TF_ko_heatmap
+from rnaseq_eval import RNASeqTFEval
 
 from data_processing import DataProcessing
 from check_consistency_ko import Consistency
@@ -84,6 +85,7 @@ class Train():
         self.moa = self.param_dict["moa"]
 
         self.roc_data_path = self.param_dict["roc_data_path"]
+        self.rnaseq_tf_eval_path = self.param_dict["rnaseq_tf_eval_path"]
 
         self.data_obj = DataProcessing(self.input_path,self.sparse_path,self.batch_size,self.relationships_filter)
         self.MOA = MOA(self.data_obj,self.moa,self.moa_subset,self.moa_beta)
@@ -121,6 +123,9 @@ class Train():
         self.trained_models = []
         self.aucs = []
         self.ko_activity_dirs = []
+
+        self.tf_rnaseq_auc = []
+        self.tf_rnaseq_corr = []
 
         self.trained_embedding_model = None
 
@@ -235,10 +240,8 @@ class Train():
         if self.moa > 0:
                 self.moa_test_losses = []
                 self.moa_train_losses = []
-        if self.record:
-            self.add_to_record(auc,train_loss,test_loss,correlation,test_correlation)
 
-        return train_loss,test_loss,correlation
+        return train_loss,test_loss,correlation, test_correlation,auc
 
 
 
@@ -412,7 +415,7 @@ class Train():
         return self.save_path
 
 
-    def add_to_record(self,auc,train_rmse,test_rmse,train_corr,test_corr):
+    def add_to_record(self,auc,train_rmse,test_rmse,train_corr,test_corr,tf_rnaseq_auc,tf_rnaseq_corr):
         time_tuple = time.localtime(time.time())
         time_for_save = str(time_tuple[1])+"-"+str(time_tuple[2])+"_"+str(time_tuple[3])+"."+str(time_tuple[4])+"."+str(time_tuple[5])
 
@@ -430,6 +433,8 @@ class Train():
         save_param_dict['test_rmse'] = test_rmse
         save_param_dict['save_path'] = self.get_save_path()
         save_param_dict['time'] = time_for_save
+        save_param_dict['tf_rnaseq_corr'] = tf_rnaseq_corr
+        save_param_dict['tf_rnaseq_auc'] = tf_rnaseq_auc
 
         print("save param dict",save_param_dict)
 
@@ -488,12 +493,15 @@ class Train():
 
                     loss_list = []
                     corr_list = []
-                    train_loss,test_loss, corr = self.get_trained_model(train_loader,test_loader,fold)
+                    train_loss,test_loss, corr,test_corr,auc = self.get_trained_model(train_loader,test_loader,fold)
                     loss_list.append(test_loss)
                     corr_list.append(corr)
-                    #consistency_obj.get_output(self.trained_embedding_model)
-                    #consistency_obj.save_output_data(self.trained_embedding_model,self.decoder)
-                    #consistency_obj.make_random_cv()
+                    rnaseq_eval = RNASeqTFEval(self.rnaseq_tf_eval_path,train_data,test_data,self.model.encoder,self.data_obj.tfs)
+                    self.tf_rnaseq_auc.append(rnaseq_eval.auc)
+                    self.tf_rnaseq_corr.append(rnaseq_eval.corr)
+
+                    if self.record:
+                        self.add_to_record(auc,train_loss,test_loss,corr,test_corr,rnaseq_eval.auc,rnaseq_eval.corr)
 
 
         with open(self.get_save_path()+'/aucs.pkl','wb+') as f:
@@ -535,6 +543,7 @@ if __name__ == "__main__":
         parser.add_argument('--moa_subset',type=int,required=False,default=0,help='subset value for moa')
 
         parser.add_argument('--roc_data_path',type=str,required=True,help='path to roc data')
+        parser.add_argument('--rnaseq_tf_eval_path',type=str,required=True,help='path to tf rnaseq data')
 
         parser.add_argument('--record',type=str,required=False,default=False,help="true if you want results to recorded in record table")
         parser.add_argument('--record_path',type=str,required=True,help="where you want to keep the record/where record is kept")
@@ -573,6 +582,7 @@ if __name__ == "__main__":
         moa = args.moa
 
         roc_data_path = args.roc_data_path
+        rnaseq_tf_eval_path = args.rnaseq_tf_eval_path
 
         cycles = args.cycles
 
@@ -610,6 +620,7 @@ if __name__ == "__main__":
             "moa_beta":moa_beta,
 
             "roc_data_path":roc_data_path,
+            "rnaseq_tf_eval_path":rnaseq_tf_eval_path,
 
             "record":record,
             "record_path":record_path,
@@ -619,6 +630,7 @@ if __name__ == "__main__":
 
         train.cross_validation(k)
         c = Consistency(train.get_save_path(),train.ko_activity_dirs)
+        #c.plot_cv()
         #cv = c.encoder_dist()
         #c.plot_dist()
 

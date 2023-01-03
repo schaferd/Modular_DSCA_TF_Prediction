@@ -98,6 +98,7 @@ class DataProcessing():
                 #self.tfs = np.sort(np.unique(self.sparse_data.loc[:,'tf']))
                 self.tfs = np.sort(np.unique(np.array(list(self.tf_gene_dict.keys()))))
                 print("tfs",len(self.tfs))
+                print(self.tfs)
 
                 self.overlap_list = list(self.overlapping_genes)
                 self.overlap_list.sort()
