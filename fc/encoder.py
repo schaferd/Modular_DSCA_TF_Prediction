@@ -12,21 +12,23 @@ class AEEncoder(nn.Module):
 
                 self.data_obj = kwargs["data"]	
                 self.width_multiplier = kwargs["width_multiplier"]
+                self.depth = kwargs["depth"]
 
                 self.tf_size = self.data_obj.tfs.size
                 self.gene_size = len(self.data_obj.gene_names)
                 #self.input_size = len(self.data_obj.input_data)
 
                 mid_layer_size = self.gene_size*self.width_multiplier
-                activ_func = nn.ReLU()
+                activ_func = nn.SELU()
 
                 encoder = collections.OrderedDict()
 
                 encoder['encoder_1'] = nn.Linear(self.gene_size,mid_layer_size)
                 encoder['encoder_activ1'] = activ_func
 
-                encoder['encoder_2'] = nn.Linear(mid_layer_size,mid_layer_size)
-                encoder['encoder_activ2'] = activ_func
+                for i in range(2,self.depth+2):
+                    encoder['encoder_'+str(i)] = nn.Linear(mid_layer_size,mid_layer_size)
+                    encoder['encoder_activ'+str(i)] = activ_func
 
                 encoder['embedding'] = nn.Linear(mid_layer_size,self.tf_size)
                 encoder['embedding_activ'] = activ_func

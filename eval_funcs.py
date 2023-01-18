@@ -7,6 +7,8 @@ import numpy as np
 import time
 import os
 
+from blood_analysis import BloodAnalysis
+
 is_gpu = False
 if torch.cuda.is_available():
     device = torch.device('cuda:0')
@@ -117,6 +119,9 @@ def get_correlation_between_runs(trained_models,data_loader,save_path):
 
 def get_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
     tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}
+    print("GETTING KO ROC CURVE")
+    print("data_obj.tfs",data_obj.tfs)
+    print("overlap list",data_obj.overlap_list)
     ae_args = {
         'embedding':encoder,
         'overlap_genes': data_obj.overlap_list,
@@ -130,7 +135,7 @@ def get_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
     }
     obj = getROCCurve(ae_args=ae_args)
     return obj.auc, obj.diff_activities, obj.scaled_rankings
-
+"""
 def get_essentiality_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
     tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}
     ae_args = {
@@ -162,3 +167,24 @@ def comp_dorothea(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
     }
     obj = getComp(ae_args=ae_args)
     return obj
+"""
+
+def get_blood_analysis(data_obj, blood_data_path, celltype_path, save_path, encoder,fold=0,cycle=0):
+    ae_args = {
+        'encoder':encoder,
+        'overlap_genes': data_obj.overlap_list,
+        'celltype_path':celltype_path,
+        'data_path':blood_data_path,
+        'ae_input_genes':data_obj.input_genes,
+        'tf_list':data_obj.tfs,
+        'out_dir':save_path,
+        'fold':fold,
+        'cycle':cycle
+    }
+    obj = BloodAnalysis(ae_args=ae_args)
+
+
+
+
+
+

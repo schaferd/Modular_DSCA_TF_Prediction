@@ -11,6 +11,7 @@ class AEDecoder(nn.Module):
 
                 self.data_obj = kwargs["data"]	
                 self.width_multiplier = kwargs["width_multiplier"]
+                self.depth = kwargs["depth"]
 
                 self.tf_size = self.data_obj.tfs.size
                 self.gene_size = len(self.data_obj.gene_names)
@@ -18,7 +19,7 @@ class AEDecoder(nn.Module):
                 self.output_size = len(self.data_obj.overlap_list)
 
                 mid_layer_size = self.gene_size*self.width_multiplier 
-                activ_func = nn.ReLU()
+                activ_func = nn.SELU()
                 #activ_func = nn.Tanh()
 
                 decoder = collections.OrderedDict()
@@ -26,10 +27,12 @@ class AEDecoder(nn.Module):
                 decoder['decoder_1'] = nn.Linear(self.tf_size,mid_layer_size)
                 decoder['decoder_activ1'] = activ_func
 
-                decoder['decoder_2']=nn.Linear(mid_layer_size,mid_layer_size)
-                decoder['decoder_activ2'] = activ_func
+                for i in range(2,self.depth+2):
+                    decoder['decoder_'+str(i)]=nn.Linear(mid_layer_size,mid_layer_size)
+                    decoder['decoder_activ'+str(i)] = activ_func
 
                 decoder['output'] = nn.Linear(mid_layer_size,self.output_size)
+                decoder['decoder_activ_output'] = activ_func
 				
                 self.ae_decoder = nn.Sequential(decoder)	
 

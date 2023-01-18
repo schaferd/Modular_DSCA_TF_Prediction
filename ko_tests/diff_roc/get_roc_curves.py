@@ -11,11 +11,6 @@ import time
 from pyensembl import EnsemblRelease
 ensembl_data = EnsemblRelease(78)
 
-#ae_roc_path = os.path.join(os.path.dirname(__file__),'ae_roc/')
-#sys.path.append(ae_roc_path)
-
-#diff_roc_path = os.path.join(os.path.dirname(__file__),'diff_roc/')
-#sys.path.append(diff_roc_path)
 import get_activity_input as gai
 
 class getROCCurve():
@@ -54,15 +49,6 @@ class getROCCurve():
         #pert_tfs = list(df.index)
         return df
 
-    """
-    def aggregate_matrix(self):
-        activities_list = list(self.activities.values())
-        df = pd.concat(activities_list,ignore_index=True)
-        samples = np.unique(df['Sample'].to_numpy()).tolist()
-        df = pd.pivot_table(df,index=['regulon'],columns =['Sample'],values='activities') 
-        return df
-    """
-
     def rank_matrix(self):
         pert_tfs = list(self.diff_activities.index)
         ranked_matrix = self.diff_activities.rank(axis = 1,method='min',na_option='keep',ascending=True)
@@ -81,16 +67,6 @@ class getROCCurve():
         rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
         rank_df.rename({'variable':'regulon'},axis=1,inplace=True)
 
-        #unscaled_rank_df = pd.melt(self.rankings,value_vars=self.scaled_rankings.columns,ignore_index=False)
-        #unscaled_rank_df['perturbed tf'] = unscaled_rank_df.index
-        #unscaled_rank_df = unscaled_rank_df.reset_index(drop=True)
-        #unscaled_rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
-        #unscaled_rank_df.rename({'variable':'regulon'},axis=1,inplace=True)
-        #activity_df = pd.melt(self.diff_activities,value_vars=self.scaled_rankings.columns,ignore_index=False)
-        #activity_df.rename({'value':'pred activity'},axis=1,inplace=True)
-        #rank_df['pred activity'] = activity_df['pred activity']
-        #per_list = [name.split('.')[0] for name in rank_df['Sample'].tolist()]
-        #rank_df['perturbed tf'] = per_list
         return rank_df#, unscaled_rank_df
 
     def get_tfs_of_interest(self):

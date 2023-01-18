@@ -22,7 +22,7 @@ import shutil
 import pickle as pkl
 from data_class import CellTypeDataset
 from ae_model import AE
-from eval_funcs import get_correlation,get_correlation_between_runs,get_ko_roc_curve, comp_dorothea#, get_essentiality_roc_curve
+from eval_funcs import get_correlation,get_ko_roc_curve, get_blood_analysis#, get_essentiality_roc_curve
 from figures import plot_input_vs_output,create_test_vs_train_plot,create_corr_hist,create_moa_figs,TF_ko_heatmap
 from rnaseq_eval import RNASeqTFEval
 
@@ -73,6 +73,8 @@ class Train():
         self.max_lr = self.param_dict["max_lr"]
         self.warm_restart = self.param_dict["warm_restart"]
         self.width_multiplier = self.param_dict["width_multiplier"]
+        self.encoder_depth = self.param_dict["encoder_depth"]
+        self.decoder_depth = self.param_dict["decoder_depth"]
 
         self.l2_reg = self.param_dict["l2_reg"]
         self.l1 = self.param_dict["l1"]
@@ -86,12 +88,14 @@ class Train():
 
         self.roc_data_path = self.param_dict["roc_data_path"]
         self.rnaseq_tf_eval_path = self.param_dict["rnaseq_tf_eval_path"]
+        self.blood_data = self.param_dict["blood_data"]
+        self.blood_meta_data = self.param_dict["blood_meta_data"]
 
         self.data_obj = DataProcessing(self.input_path,self.sparse_path,self.batch_size,self.relationships_filter)
         self.MOA = MOA(self.data_obj,self.moa,self.moa_subset,self.moa_beta)
         
-        self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier).to(device)
-        self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier).to(device)
+        self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.encoder_depth).to(device)
+        self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.decoder_depth).to(device)
         self.model = AE(self.encoder,self.decoder)
 
         self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
@@ -167,8 +171,8 @@ class Train():
         else:
             print("NOT saving at "+str(self.get_save_path()))
 
-        self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier).to(device)
-        self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier).to(device)
+        self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.encoder_depth).to(device)
+        self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.decoder_depth).to(device)
         self.model = AE(self.encoder,self.decoder)
 
         self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
@@ -232,9 +236,10 @@ class Train():
             self.ko_activity_dirs.append(ko_activity_dir)
             if not os.path.exists(ko_activity_dir):
                 os.makedirs(ko_activity_dir)
-            auc,  activity_df,ranked_df = get_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            auc, activity_df, ranked_df = get_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            #get_blood_analysis(self.data_obj,self.blood_data,self.blood_meta_data,self.get_save_path(),self.trained_embedding_model,fold=fold_num,cycle=self.cycle)
             self.aucs.append(auc)
-            #comp_dorothea(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+
             TF_ko_heatmap(ranked_df,self.get_save_path(),'ranked_df',fold=fold_num,cycle=self.cycle)
             TF_ko_heatmap(activity_df,self.get_save_path(),'activity_df',fold=fold_num,cycle=self.cycle)
         if self.moa > 0:
@@ -496,9 +501,9 @@ class Train():
                     train_loss,test_loss, corr,test_corr,auc = self.get_trained_model(train_loader,test_loader,fold)
                     loss_list.append(test_loss)
                     corr_list.append(corr)
-                    rnaseq_eval = RNASeqTFEval(self.rnaseq_tf_eval_path,train_data,test_data,self.model.encoder,self.data_obj.tfs)
-                    self.tf_rnaseq_auc.append(rnaseq_eval.auc)
-                    self.tf_rnaseq_corr.append(rnaseq_eval.corr)
+                    rnaseq_eval = RNASeqTFEval(self.rnaseq_tf_eval_path,train_data,test_data,self.model.encoder,self.data_obj.tfs,self.get_save_path())
+                    #self.tf_rnaseq_auc.append(rnaseq_eval.auc)
+                    #self.tf_rnaseq_corr.append(rnaseq_eval.corr)
 
                     if self.record:
                         self.add_to_record(auc,train_loss,test_loss,corr,test_corr,rnaseq_eval.auc,rnaseq_eval.corr)
@@ -538,12 +543,17 @@ if __name__ == "__main__":
         parser.add_argument('--width_multiplier',type=int,required=False,default=1,help="width of network = width_multiplier*input_size")
         parser.add_argument('--relationships_filter',type=int,required=False,default=1,help='minimum connections that genes must have to be in output layer')
 
+        parser.add_argument('--encoder_depth',type=int,required=False,default=1)
+        parser.add_argument('--decoder_depth',type=int,required=False,default=1)
+
         parser.add_argument('--moa',type=float,required=False,default=0,help='value to multiple moa loss by')
         parser.add_argument('--moa_beta',type=float,required=False,default=0.9,help='beta value for moa')
         parser.add_argument('--moa_subset',type=int,required=False,default=0,help='subset value for moa')
 
         parser.add_argument('--roc_data_path',type=str,required=True,help='path to roc data')
         parser.add_argument('--rnaseq_tf_eval_path',type=str,required=True,help='path to tf rnaseq data')
+        parser.add_argument('--blood_data',type=str,required=True)
+        parser.add_argument('--blood_meta_data',type=str,required=True)
 
         parser.add_argument('--record',type=str,required=False,default=False,help="true if you want results to recorded in record table")
         parser.add_argument('--record_path',type=str,required=True,help="where you want to keep the record/where record is kept")
@@ -559,6 +569,9 @@ if __name__ == "__main__":
         model_type = args.model_type
         width_multiplier = args.width_multiplier
         relationships_filter = args.relationships_filter
+
+        encoder_depth = args.encoder_depth
+        decoder_depth = args.decoder_depth
 
         l2_reg = args.l2
         l1 = args.l1
@@ -583,6 +596,8 @@ if __name__ == "__main__":
 
         roc_data_path = args.roc_data_path
         rnaseq_tf_eval_path = args.rnaseq_tf_eval_path
+        blood_data = args.blood_data
+        blood_meta_data = args.blood_meta_data
 
         cycles = args.cycles
 
@@ -597,6 +612,9 @@ if __name__ == "__main__":
             "fig_freq":fig_freq,
             "model_type":model_type,	
             "width_multiplier":width_multiplier,
+
+            "encoder_depth":encoder_depth,
+            "decoder_depth":decoder_depth,
 
             "lr":lr,
             "lr_sched":lr_sched,
@@ -621,6 +639,8 @@ if __name__ == "__main__":
 
             "roc_data_path":roc_data_path,
             "rnaseq_tf_eval_path":rnaseq_tf_eval_path,
+            "blood_data":blood_data,
+            "blood_meta_data":blood_meta_data,
 
             "record":record,
             "record_path":record_path,

@@ -18,6 +18,7 @@ class AEDecoder(nn.Module):
                 self.dropout_rate = kwargs["dropout_rate"]
                 self.is_bn = kwargs["batch_norm"]
                 self.width_multiplier = kwargs["width_multiplier"]
+                self.depth = kwargs["depth"]
 
                 matrices_obj = TFGroupedFCIndep(self.data_obj,nodes_per_tf=self.width_multiplier)
 
@@ -43,12 +44,13 @@ class AEDecoder(nn.Module):
                 #    decoder['bn_decoder1'] = nn.BatchNorm1d(self.decoder_features)
 
 
-                decoder['decoder_2'] = sl.SparseLinear(self.decoder_features,self.decoder_features,connectivity=torch.tensor(self.middle_weights))
-                decoder['decoder_activ2'] = activ_func
-                #if self.is_bn:
-                #    decoder['bn_decoder'+str(i+2)] = nn.BatchNorm1d(self.decoder_features)
-                #if self.dropout_rate > 0:
-                #    middle_layers['do_decoder'+str(i+2)] = nn.Dropout(self.dropout_rate)
+                for i in range(2,self.depth+2):
+                    decoder['decoder_'+str(i)] = sl.SparseLinear(self.decoder_features,self.decoder_features,connectivity=torch.tensor(self.middle_weights))
+                    decoder['decoder_activ'+str(i)] = activ_func
+                    #if self.is_bn:
+                    #    decoder['bn_decoder'+str(i)] = nn.BatchNorm1d(self.decoder_features)
+                    #if self.dropout_rate > 0:
+                    #    middle_layers['do_decoder'+str(i)] = nn.Dropout(self.dropout_rate)
 
 
                 decoder['output'] = sl.SparseLinear(self.decoder_features,self.gene_size,connectivity=torch.tensor(self.final_weights))

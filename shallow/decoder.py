@@ -24,9 +24,9 @@ class AEDecoder(nn.Module):
                 decoder = collections.OrderedDict()
                 print(torch.ops.torch_scatter.cuda_version())
                 decoder['decoder_1'] = sl.SparseLinear(max(self.shallow_matrix[1])+1,max(self.shallow_matrix[0])+1,connectivity=torch.tensor(self.shallow_matrix).cpu())
-                #if self.is_bn:
-                #    decoder['bn_decoder1'] = nn.BatchNorm1d(max(self.shallow_matrix[1])+1,affine=False)
-                #decoder['decoder_activ1'] = activ_func
+                decoder['decoder_activ1'] = activ_func
+                if self.is_bn:
+                    decoder['bn_decoder1'] = nn.BatchNorm1d(max(self.shallow_matrix[1])+1,affine=False)
 
                 self.decoder = nn.Sequential(decoder)
 

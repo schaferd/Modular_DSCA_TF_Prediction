@@ -19,6 +19,7 @@ class AEDecoder(nn.Module):
                 self.dropout_rate = kwargs["dropout_rate"]
                 self.is_bn = kwargs["batch_norm"]
                 self.width_multiplier = kwargs["width_multiplier"]
+                self.depth = kwargs["depth"]
 
                 matrices_obj = GeneGroupedFCIndep(self.data_obj,nodes_per_gene=self.width_multiplier)
 
@@ -26,21 +27,23 @@ class AEDecoder(nn.Module):
                 self.middle_weights = matrices_obj.middle_layer 
                 self.final_weights = matrices_obj.final_layer 
 
-                activ_func = nn.LeakyReLU()
+                #activ_func = nn.Tanh()
+                activ_func = nn.SELU()
 
                 decoder = collections.OrderedDict()
 
                 decoder['decoder_1'] = sl.SparseLinear(max(self.first_weights[1])+1,max(self.first_weights[0])+1,connectivity=torch.tensor(self.first_weights))
-                decoder['decoder_activ1'] = nn.Tanh()
+                decoder['decoder_activ1'] = activ_func
                 #if self.is_bn:
                 #    decoder['bn_decoder1'] = nn.BatchNorm1d(self.decoder_features)
 				
-                decoder['decoder_2'] = sl.SparseLinear(max(self.middle_weights[1])+1,max(self.middle_weights[0])+1,connectivity=torch.tensor(self.middle_weights))
-                decoder['decoder_activ2'] = nn.Tanh()
-                #if self.is_bn:
-                #    decoder['bn_decoder'+str(i+2)] = nn.BatchNorm1d(self.decoder_features)
-                #if self.dropout_rate > 0:
-                #    middle_layers['do_decoder'+str(i+2)] = nn.Dropout(self.dropout_rate)
+                for i in range(2,self.depth+2):
+                    decoder['decoder_'+str(i)] = sl.SparseLinear(max(self.middle_weights[1])+1,max(self.middle_weights[0])+1,connectivity=torch.tensor(self.middle_weights))
+                    decoder['decoder_activ'+str(i)] = activ_func
+                    #if self.is_bn:
+                    #    decoder['bn_decoder'+str(i)] = nn.BatchNorm1d(self.decoder_features)
+                    #if self.dropout_rate > 0:
+                    #    middle_layers['do_decoder'+str(i)] = nn.Dropout(self.dropout_rate)
 
                 #decoder['decoder_3'] = sl.SparseLinear(max(self.middle_weights[1])+1,max(self.middle_weights[0])+1,connectivity=torch.tensor(self.middle_weights))
                 #decoder['decoder_activ3'] = nn.Tanh()
