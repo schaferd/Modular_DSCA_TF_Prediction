@@ -40,7 +40,7 @@ class getROCCurve():
         #self.perturbation_df,self.unscaled_rank_df = self.get_perturbation_info()
         self.perturbation_df = self.get_perturbation_info()
         self.tfs_of_interest = self.get_tfs_of_interest()
-        self.auc = self.get_roc()
+        self.auc, self.ko_tf_ranks = self.get_roc()
 
 
     def load_diff_activities(self,activity_file):
@@ -88,6 +88,8 @@ class getROCCurve():
         observed = self.tfs_of_interest['scaled ranking']
         expected = self.tfs_of_interest['is tf perturbed']+0
 
+        ranks_of_ko_tfs = self.tfs_of_interest[self.tfs_of_interest['is tf perturbed']==1]
+
         n_positives = sum(expected == 1)
         n_negatives = sum(expected == 0)
         positives = observed[expected == 1]
@@ -110,7 +112,7 @@ class getROCCurve():
         print(tpr)
 
         self.plot_ROC(tpr,fpr,auc)
-        return auc
+        return auc, ranks_of_ko_tfs
 
 
     def get_aucROC(self,ne, po):

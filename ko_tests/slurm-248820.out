@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/get_roc_curves_files.py", line 8, in <module>
-    import get_activity_input_file_inp as gai
-  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/./ae_roc/get_activity_input_file_inp.py", line 12, in <module>
-    model_class_path = os.environ["model_class_path"]
-  File "/nobackup/users/schaferd/anaconda3/envs/ae_train3/lib/python3.9/os.py", line 679, in __getitem__
-    raise KeyError(key) from None
-KeyError: 'model_class_path'

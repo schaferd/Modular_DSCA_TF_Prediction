@@ -1,0 +1,7 @@
+non-fc:
+lr_sched: max:0.1, min: 0.01
+epochs:60
+
+fc: 
+lr: 0.0001
+epochs: 20

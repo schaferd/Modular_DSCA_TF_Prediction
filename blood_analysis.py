@@ -83,7 +83,7 @@ class BloodAnalysis():
 
     def train_log_reg(self):
         tr_l, tr_a, t_l, t_a = self.get_train_test_data()
-        clf = LogisticRegression(random_state=0).fit(tr_a,tr_l)
+        clf = LogisticRegression(random_state=0,C=100).fit(tr_a,tr_l)
         pred = clf.predict(t_a)
         nmis = normalized_mutual_info_score(t_l,pred)
         print("logistic regression nmis",nmis)

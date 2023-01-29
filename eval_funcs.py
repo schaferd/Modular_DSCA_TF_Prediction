@@ -134,7 +134,20 @@ def get_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
         'cycle':cycle
     }
     obj = getROCCurve(ae_args=ae_args)
-    return obj.auc, obj.diff_activities, obj.scaled_rankings
+    return obj.auc, obj.diff_activities, obj.scaled_rankings, obj.ko_tf_ranks
+
+
+def plot_ko_rank_vs_connections(data_obj,ko_tf_rankings,save_path,fold=0,cycle=0):
+    relationships = [len(data_obj.tf_gene_dict[tf]) for tf in ko_tf_rankings['regulon']]
+    print("rela",relationships)
+    print("scaled rankings",ko_tf_rankings["scaled ranking"])
+    plt.clf()
+    plt.scatter(relationships,ko_tf_rankings["scaled ranking"])
+    plt.ylabel('scaled ranking')
+    plt.xlabel('number of gene relationships to ko tf')
+    plt.title('ko tf rank vs. tf-gene relationships, fold: '+str(fold)+' cycle: '+str(cycle))
+    plt.savefig(save_path+'/ko_rank_vs_rel_fold'+str(fold)+'_cycle'+str(cycle)+'.png')
+
 """
 def get_essentiality_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
     tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}

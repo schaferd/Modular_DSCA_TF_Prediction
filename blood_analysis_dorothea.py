@@ -10,18 +10,34 @@ from pyensembl import EnsemblRelease
 ensembl_data = EnsemblRelease(78)
 
 class BloodAnalysis():
-    def __init__(self,activities, metadata, out_dir):
+    def __init__(self,bloodtype_data, activities, metadata, out_dir):
         self.activities = pd.read_csv(activities).set_index("Unnamed: 0").T
         self.labels = self.get_labels(metadata)
+        self.raw_data = pd.read_csv(bloodtype_data, delimiter="\t")
+        self.raw_data.set_index('GENE',inplace=True)
+        self.raw_data = self.raw_data.T
+
         print("activities",self.activities)
         print("metadata",self.labels)
         self.out_dir = out_dir
         self.train_log_reg()
-        self.train_gmm()
+        #self.train_gmm()
         
 
     def get_labels(self,metadata_path):
         return pd.read_csv(metadata_path ,delimiter="\t").set_index("NAME").sort_index()
+
+    def get_raw_train_test_data(self,train_size=700):
+        self.raw_data = self.raw_data[self.raw_data.index.isin(self.labels.index)]
+        self.labels = self.labels[self.labels.index.isin(self.raw_data.index)]
+
+        train_labels = self.labels.sample(n=train_size)
+        train_data = self.raw_data[self.raw_data.index.isin(train_labels.index)]
+
+        test_labels = self.labels[~self.labels.index.isin(train_labels.index)]
+        test_data = self.raw_data[self.raw_data.index.isin(test_labels.index)]
+
+        return train_labels.to_numpy().T.flatten(), train_data.to_numpy(), test_labels.to_numpy().T.flatten(), test_data.to_numpy()
 
     def get_train_test_data(self,train_size=700):
         self.activities = self.activities[self.activities.index.isin(self.labels.index)]
@@ -36,8 +52,9 @@ class BloodAnalysis():
         return train_labels.to_numpy().T.flatten(), train_activities.to_numpy(), test_labels.to_numpy().T.flatten(), test_activities.to_numpy()
 
     def train_log_reg(self):
-        tr_l, tr_a, t_l, t_a = self.get_train_test_data()
-        clf = LogisticRegression(random_state=0).fit(tr_a,tr_l)
+        #tr_l, tr_a, t_l, t_a = self.get_train_test_data()
+        tr_l, tr_a, t_l, t_a = self.get_raw_train_test_data()
+        clf = LogisticRegression(random_state=0,C=1000,max_iter=10000,multi_class='multinomial').fit(tr_a,tr_l)
         pred = clf.predict(t_a)
         nmis = normalized_mutual_info_score(t_l,pred)
         print("logistic regression nmis",nmis)
@@ -64,7 +81,8 @@ class BloodAnalysis():
 
 
 if __name__ == "__main__":
+    blood_type_data = "/nobackup/users/schaferd/blood_analysis_data/SCP43/expression/expression_matrix_tpm.txt"
     dorothea_activities_path = "/nobackup/users/schaferd/blood_analysis_data/SCP43/expression/blood_data.viper_pred.csv"
     metadata_path = "/nobackup/users/schaferd/blood_analysis_data/SCP43/metadata/metadata.txt"
     outdir = "/nobackup/users/schaferd/blood_analysis_data/SCP43/expression/"
-    obj = BloodAnalysis(dorothea_activities_path,metadata_path,outdir)
+    obj = BloodAnalysis(blood_type_data,dorothea_activities_path,metadata_path,outdir)

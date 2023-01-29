@@ -22,7 +22,7 @@ import shutil
 import pickle as pkl
 from data_class import CellTypeDataset
 from ae_model import AE
-from eval_funcs import get_correlation,get_ko_roc_curve, get_blood_analysis#, get_essentiality_roc_curve
+from eval_funcs import get_correlation,get_ko_roc_curve, get_blood_analysis, plot_ko_rank_vs_connections#, get_essentiality_roc_curve
 from figures import plot_input_vs_output,create_test_vs_train_plot,create_corr_hist,create_moa_figs,TF_ko_heatmap
 from rnaseq_eval import RNASeqTFEval
 
@@ -68,9 +68,13 @@ class Train():
         self.cycles = self.param_dict["cycles"]
         self.cycle = 0
         self.batch_size = self.param_dict["batch_size"]
-        self.lr = self.param_dict["lr"]
-        self.lr_sched = self.param_dict["lr_sched"]
-        self.max_lr = self.param_dict["max_lr"]
+        #self.lr = self.param_dict["lr"]
+        self.en_lr = self.param_dict["en_lr"]
+        self.de_lr = self.param_dict["de_lr"]
+        self.en_lr_sched = self.param_dict["en_lr_sched"]
+        self.de_lr_sched = self.param_dict["de_lr_sched"]
+        self.en_max_lr = self.param_dict["en_max_lr"]
+        self.de_max_lr = self.param_dict["de_max_lr"]
         self.warm_restart = self.param_dict["warm_restart"]
         self.width_multiplier = self.param_dict["width_multiplier"]
         self.encoder_depth = self.param_dict["encoder_depth"]
@@ -95,17 +99,27 @@ class Train():
         self.MOA = MOA(self.data_obj,self.moa,self.moa_subset,self.moa_beta)
         
         self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.encoder_depth).to(device)
+        self.en_optimizer = torch.optim.Adam(self.encoder.parameters(),lr=self.en_lr,weight_decay=self.l2_reg)
+        self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.decoder_depth).to(device)
+        self.de_optimizer = torch.optim.Adam(self.decoder.parameters(),lr=self.de_lr,weight_decay=self.l2_reg)
+        self.model = AE(self.encoder,self.decoder)
+
+        self.criterion = nn.MSELoss()
+        """
+        self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.encoder_depth).to(device)
         self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.decoder_depth).to(device)
         self.model = AE(self.encoder,self.decoder)
 
         self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
         self.criterion = nn.MSELoss()
+        """
 
         self.save_path = None 
         shutil.copyfile(encoder_path+'/encoder.py',self.get_save_path()+'/encoder.py')
         shutil.copyfile(decoder_path+'/decoder.py',self.get_save_path()+'/decoder.py')
 
-        self.scheduler = None 
+        self.en_scheduler = None 
+        self.de_scheduler = None 
 
         self.warm_restart_freq = 0
         if self.warm_restart > 0:
@@ -156,8 +170,10 @@ class Train():
         Initilizes weights in network m
         """
         if type(m) == nn.Linear:
-            torch.nn.init.xavier_uniform_(m.weight)
+            #torch.nn.init.xavier_uniform_(m.weight)
+            torch.nn.init.kaiming_normal_(m.weight,nonlinearity='linear')
             m.bias.data.fill_(0.1)
+
 
 
     def get_trained_model(self,train_loader,test_loader,fold_num=0):
@@ -172,10 +188,12 @@ class Train():
             print("NOT saving at "+str(self.get_save_path()))
 
         self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.encoder_depth).to(device)
+        self.en_optimizer = torch.optim.Adam(self.encoder.parameters(),lr=self.en_lr,weight_decay=self.l2_reg)
         self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.decoder_depth).to(device)
+        self.de_optimizer = torch.optim.Adam(self.decoder.parameters(),lr=self.de_lr,weight_decay=self.l2_reg)
         self.model = AE(self.encoder,self.decoder)
 
-        self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
+        #self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
         self.criterion = nn.MSELoss()
 
         self.model.encoder.apply(self.init_weights)
@@ -187,11 +205,13 @@ class Train():
 
         for epoch in range(self.epochs):
             if self.warm_restart != 0 and epoch%self.warm_restart_freq == 0:
-                if self.lr_sched:
-                    sched_state = self.scheduler.state_dict()
-                    self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer,max_lr=self.max_lr,epochs=self.epochs,steps_per_epoch=len(train_loader))
-                    self.scheduler.load_state_dict(sched_state)
-                self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
+                #if self.lr_sched:
+                #sched_state = self.scheduler.state_dict()
+                #self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer,max_lr=self.max_lr,epochs=self.epochs,steps_per_epoch=len(train_loader))
+                #self.scheduler.load_state_dict(sched_state)
+                self.en_optimizer = torch.optim.Adam(self.encoder.parameters(),lr=self.en_lr,weight_decay=self.l2_reg)
+                self.de_optimizer = torch.optim.Adam(self.decoder.parameters(),lr=self.de_lr,weight_decay=self.l2_reg)
+                #self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
 
             train_loss = self.train_iteration(train_loader,fold_num)
             test_loss = self.test_iteration(test_loader,fold_num)
@@ -236,7 +256,9 @@ class Train():
             self.ko_activity_dirs.append(ko_activity_dir)
             if not os.path.exists(ko_activity_dir):
                 os.makedirs(ko_activity_dir)
-            auc, activity_df, ranked_df = get_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            print("ko tf ranks",ko_tf_ranks)
+            plot_ko_rank_vs_connections(self.data_obj,ko_tf_ranks,self.get_save_path(),fold=fold_num,cycle=self.cycle)
             #get_blood_analysis(self.data_obj,self.blood_data,self.blood_meta_data,self.get_save_path(),self.trained_embedding_model,fold=fold_num,cycle=self.cycle)
             self.aucs.append(auc)
 
@@ -264,7 +286,9 @@ class Train():
             samples = samples.to(device)
             print(samples.shape)
 
-            self.optimizer.zero_grad(set_to_none=True)
+            #self.optimizer.zero_grad(set_to_none=True)
+            self.en_optimizer.zero_grad(set_to_none=True)
+            self.de_optimizer.zero_grad(set_to_none=True)
             
             outputs = self.model(samples.float())
             self.train_output = outputs
@@ -285,10 +309,15 @@ class Train():
                     self.training_losses[fold].append(train_loss)
             """
             train_loss.backward()
-            self.optimizer.step()
+            #self.optimizer.step()
+            self.en_optimizer.step()
+            self.de_optimizer.step()
             loss += train_loss.detach().item()
-            if self.scheduler is not None:
-                self.scheduler.step()
+            if self.en_scheduler is not None:
+                self.en_scheduler.step()
+            if self.de_scheduler is not None:
+                self.de_scheduler.step()
+
                 
         if self.moa > 0:
                 epoch_moa_loss = epoch_moa_loss/len(train_loader)
@@ -391,10 +420,13 @@ class Train():
         elif decoder_name == 'tf_grouped_indep':
             decoder_name = 'tf'
 
-        save_path = self.base_path+str(model_type)+encoder_name+'-'+decoder_name+"_epochs"+str(self.epochs)+"_batchsize"+str(self.batch_size)+"_lr"+str(self.lr)
 
-        if self.lr_sched:
-            save_path += "_lrsched"
+        save_path = self.base_path+str(model_type)+encoder_name+'-'+decoder_name+"_epochs"+str(self.epochs)+"_batchsize"+str(self.batch_size)+"_enlr"+str(self.en_lr)+"_delr"+str(self.de_lr)
+
+        if self.en_lr_sched:
+            save_path += "_lrensched_maxlr"+str(self.en_max_lr)
+        if self.de_lr_sched:
+            save_path += "_lrensched_maxlr"+str(self.de_max_lr)
         if self.l2_reg > 0:
             save_path += "_l2"+str(self.l2_reg)
         if self.l1 > 0:
@@ -493,15 +525,17 @@ class Train():
                     test_loader = torch.utils.data.DataLoader(test_data_celltype, batch_size=batch_size,drop_last=True, **kwargs)
 
 
-                    if self.lr_sched:
-                        self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer,max_lr=self.max_lr,epochs=self.epochs,steps_per_epoch=len(train_loader))
+                    if self.en_lr_sched:
+                        self.en_scheduler = torch.optim.lr_scheduler.OneCycleLR(self.en_optimizer,max_lr=self.en_max_lr,epochs=self.epochs,steps_per_epoch=len(train_loader))
+                    if self.de_lr_sched:
+                        self.de_scheduler = torch.optim.lr_scheduler.OneCycleLR(self.de_optimizer,max_lr=self.de_max_lr,epochs=self.epochs,steps_per_epoch=len(train_loader))
 
                     loss_list = []
                     corr_list = []
                     train_loss,test_loss, corr,test_corr,auc = self.get_trained_model(train_loader,test_loader,fold)
                     loss_list.append(test_loss)
                     corr_list.append(corr)
-                    rnaseq_eval = RNASeqTFEval(self.rnaseq_tf_eval_path,train_data,test_data,self.model.encoder,self.data_obj.tfs,self.get_save_path())
+                    #rnaseq_eval = RNASeqTFEval(self.rnaseq_tf_eval_path,train_data,test_data,self.model.encoder,self.data_obj.tfs,self.sparse_path,self.get_save_path())
                     #self.tf_rnaseq_auc.append(rnaseq_eval.auc)
                     #self.tf_rnaseq_corr.append(rnaseq_eval.corr)
 
@@ -522,7 +556,10 @@ class Train():
 if __name__ == "__main__":
         parser = argparse.ArgumentParser(description='a cool autoencoder!!',formatter_class=RawTextHelpFormatter)
         parser.add_argument('--epochs', type=int, required=True, help='number of epochs to train on')
-        parser.add_argument('--learning_rate', type=float, required=False,default=1e-2, help='the learning rate')
+        #parser.add_argument('--learning_rate', type=float, required=False,default=1e-2, help='the learning rate')
+        parser.add_argument('--en_learning_rate', type=float, required=False,default=1e-2, help='the encoder learning rate')
+        parser.add_argument('--de_learning_rate', type=float, required=False,default=1e-2, help='the decoder learning rate')
+
         parser.add_argument('--save_figs',type=str,required=False,default=False,help='set to True if you want figures from training/testing to be saved')
         parser.add_argument('--save_path',type=str,required=False,default="figures/",help='directory where you want error data and figures to saved')
         parser.add_argument('--fig_freq',type=int,required=False,default=10,help='how often do you want figures on epochs (ie. every 10 epochs)')
@@ -532,12 +569,14 @@ if __name__ == "__main__":
         parser.add_argument('--save_model',type=str,required=False,default=False,help='whether you want the model data to be saved')
         parser.add_argument('--input_data_path',type=str,required=True,help='path for input data')
         parser.add_argument('--sparse_data_path',type=str,required=True,help='path for sparse data')
-        parser.add_argument('--lr_sched',type=str,required=False,default=False,help='True if you want learning rate to be scheduled')
+        parser.add_argument('--en_lr_sched',type=str,required=False,default=False,help='True if you want learning rate to be scheduled')
+        parser.add_argument('--de_lr_sched',type=str,required=False,default=False,help='True if you want learning rate to be scheduled')
         parser.add_argument('--batch_norm',type=str,required=False,default=False,help='True if you want batch normalization layers')
         parser.add_argument('--batch_size',type=int,required=True,help='size of training batches')
         parser.add_argument('--l1',type=float,required=False,default=0,help='value for l1 reg')
         parser.add_argument('--warm_restart',type=int,required=False,default=0,help='how many times during training do you want adam to restart')
-        parser.add_argument('--max_lr',type=float,required=False,default=1e-3,help='max value lr_sched will reach')
+        parser.add_argument('--en_max_lr',type=float,required=False,default=1e-3,help='max value lr_sched will reach')
+        parser.add_argument('--de_max_lr',type=float,required=False,default=1e-3,help='max value lr_sched will reach')
         parser.add_argument('--k_splits',type=int,required=False,default=1,help='how many splits you want in cross validation')
 
         parser.add_argument('--width_multiplier',type=int,required=False,default=1,help="width of network = width_multiplier*input_size")
@@ -585,9 +624,13 @@ if __name__ == "__main__":
         input_path = args.input_data_path
 
 
-        lr = args.learning_rate
-        lr_sched = args.lr_sched.lower()=='true'
-        max_lr = args.max_lr
+        #lr = args.learning_rate
+        en_lr = args.en_learning_rate
+        de_lr = args.de_learning_rate
+        en_lr_sched = args.en_lr_sched.lower()=='true'
+        de_lr_sched = args.de_lr_sched.lower()=='true'
+        en_max_lr = args.en_max_lr
+        de_max_lr = args.de_max_lr
         warm_restart = args.warm_restart
 
         moa_subset = args.moa_subset
@@ -616,9 +659,13 @@ if __name__ == "__main__":
             "encoder_depth":encoder_depth,
             "decoder_depth":decoder_depth,
 
-            "lr":lr,
-            "lr_sched":lr_sched,
-            "max_lr":max_lr,
+            #"lr":lr,
+            "en_lr":en_lr,
+            "de_lr":de_lr,
+            "en_lr_sched":en_lr_sched,
+            "de_lr_sched":de_lr_sched,
+            "en_max_lr":en_max_lr,
+            "de_max_lr":de_max_lr,
             "warm_restart":warm_restart,
 
             "l2_reg":l2_reg,
