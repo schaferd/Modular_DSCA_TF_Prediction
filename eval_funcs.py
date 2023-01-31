@@ -7,7 +7,7 @@ import numpy as np
 import time
 import os
 
-from blood_analysis import BloodAnalysis
+#from blood_analysis import BloodAnalysis
 
 is_gpu = False
 if torch.cuda.is_available():

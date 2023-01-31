@@ -22,7 +22,7 @@ import shutil
 import pickle as pkl
 from data_class import CellTypeDataset
 from ae_model import AE
-from eval_funcs import get_correlation,get_ko_roc_curve, get_blood_analysis, plot_ko_rank_vs_connections#, get_essentiality_roc_curve
+from eval_funcs import get_correlation,get_ko_roc_curve,  plot_ko_rank_vs_connections#, get_essentiality_roc_curve, get_blood_analysis
 from figures import plot_input_vs_output,create_test_vs_train_plot,create_corr_hist,create_moa_figs,TF_ko_heatmap
 from rnaseq_eval import RNASeqTFEval
 
@@ -80,7 +80,8 @@ class Train():
         self.encoder_depth = self.param_dict["encoder_depth"]
         self.decoder_depth = self.param_dict["decoder_depth"]
 
-        self.l2_reg = self.param_dict["l2_reg"]
+        self.en_l2_reg = self.param_dict["en_l2_reg"]
+        self.de_l2_reg = self.param_dict["de_l2_reg"]
         self.l1 = self.param_dict["l1"]
         self.dropout_rate = self.param_dict["dropout_rate"]
         self.batch_norm = self.param_dict["batch_norm"]
@@ -92,16 +93,16 @@ class Train():
 
         self.roc_data_path = self.param_dict["roc_data_path"]
         self.rnaseq_tf_eval_path = self.param_dict["rnaseq_tf_eval_path"]
-        self.blood_data = self.param_dict["blood_data"]
-        self.blood_meta_data = self.param_dict["blood_meta_data"]
+        #self.blood_data = self.param_dict["blood_data"]
+        #self.blood_meta_data = self.param_dict["blood_meta_data"]
 
         self.data_obj = DataProcessing(self.input_path,self.sparse_path,self.batch_size,self.relationships_filter)
         self.MOA = MOA(self.data_obj,self.moa,self.moa_subset,self.moa_beta)
         
         self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.encoder_depth).to(device)
-        self.en_optimizer = torch.optim.Adam(self.encoder.parameters(),lr=self.en_lr,weight_decay=self.l2_reg)
+        self.en_optimizer = torch.optim.Adam(self.encoder.parameters(),lr=self.en_lr,weight_decay=self.en_l2_reg)
         self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.decoder_depth).to(device)
-        self.de_optimizer = torch.optim.Adam(self.decoder.parameters(),lr=self.de_lr,weight_decay=self.l2_reg)
+        self.de_optimizer = torch.optim.Adam(self.decoder.parameters(),lr=self.de_lr,weight_decay=self.de_l2_reg)
         self.model = AE(self.encoder,self.decoder)
 
         self.criterion = nn.MSELoss()
@@ -140,6 +141,8 @@ class Train():
         self.embedding_losses = []
         self.trained_models = []
         self.aucs = []
+        self.train_corrs = []
+        self.test_corrs = []
         self.ko_activity_dirs = []
 
         self.tf_rnaseq_auc = []
@@ -188,9 +191,9 @@ class Train():
             print("NOT saving at "+str(self.get_save_path()))
 
         self.encoder = AEEncoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.encoder_depth).to(device)
-        self.en_optimizer = torch.optim.Adam(self.encoder.parameters(),lr=self.en_lr,weight_decay=self.l2_reg)
+        self.en_optimizer = torch.optim.Adam(self.encoder.parameters(),lr=self.en_lr,weight_decay=self.en_l2_reg)
         self.decoder = AEDecoder(data=self.data_obj,dropout_rate=self.dropout_rate,batch_norm=self.batch_norm,width_multiplier=self.width_multiplier,depth=self.decoder_depth).to(device)
-        self.de_optimizer = torch.optim.Adam(self.decoder.parameters(),lr=self.de_lr,weight_decay=self.l2_reg)
+        self.de_optimizer = torch.optim.Adam(self.decoder.parameters(),lr=self.de_lr,weight_decay=self.de_l2_reg)
         self.model = AE(self.encoder,self.decoder)
 
         #self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
@@ -209,8 +212,8 @@ class Train():
                 #sched_state = self.scheduler.state_dict()
                 #self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer,max_lr=self.max_lr,epochs=self.epochs,steps_per_epoch=len(train_loader))
                 #self.scheduler.load_state_dict(sched_state)
-                self.en_optimizer = torch.optim.Adam(self.encoder.parameters(),lr=self.en_lr,weight_decay=self.l2_reg)
-                self.de_optimizer = torch.optim.Adam(self.decoder.parameters(),lr=self.de_lr,weight_decay=self.l2_reg)
+                self.en_optimizer = torch.optim.Adam(self.encoder.parameters(),lr=self.en_lr,weight_decay=self.en_l2_reg)
+                self.de_optimizer = torch.optim.Adam(self.decoder.parameters(),lr=self.de_lr,weight_decay=self.de_l2_reg)
                 #self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
 
             train_loss = self.train_iteration(train_loader,fold_num)
@@ -218,7 +221,7 @@ class Train():
             print("epoch : {}/{}, test loss = {:6f}".format(epoch+1,self.epochs,test_loss))
             print("epoch : {}/{}, train loss = {:6f}".format(epoch+1,self.epochs,train_loss))
             if self.save_figs and epoch%self.fig_freq == 0 and epoch > 0:
-                self.save_train_test_loss_data()
+                self.save_train_test_loss_data(fold_num, self.cycle)
                 #if self.save_model:
                 #    torch.save(self.model.module.encoder,self.get_save_path()+"/model_encoder_fold"+str(fold_num)+"_epoch_"+str(epoch)+".pth")
                 if self.moa > 0:
@@ -238,32 +241,35 @@ class Train():
 
         auc = 0
         if self.save_model:
-            torch.save(self.model.encoder,self.get_save_path()+"/model_encoder_cycle"+str(self.cycle)+"_fold"+str(fold_num)+".pth")
-            corr_file = open(self.get_save_path()+"/corr_cycle"+str(self.cycle)+"_fold"+str(fold_num),'w+')
+            torch.save(self.model.encoder,self.get_save_path()+'/fold'+str(fold_num)+'_cycle'+str(self.cycle)+"/model_encoder_cycle"+str(self.cycle)+"_fold"+str(fold_num)+".pth")
+            corr_file = open(self.get_save_path()+'/fold'+str(fold_num)+'_cycle'+str(self.cycle)+"/corr_cycle"+str(self.cycle)+"_fold"+str(fold_num),'w+')
             corr_file.write(str(correlation)+"\n")
             corr_file.write(str(corr_list))
             corr_file.close()
         if self.save_figs:
-            self.save_train_test_loss_data()
+            self.save_train_test_loss_data(fold_num,self.cycle)
+            save_path = self.get_save_path()+'/fold'+str(fold_num)+'_cycle'+str(self.cycle)+'/'
             if self.moa > 0:
-                    create_moa_figs(self.moa_train_losses,self.moa_test_losses,self.moa_violation_count_train,self.moa_violation_count_test,self.get_save_path(),fold=fold_num,cycle=self.cycle)
-            create_test_vs_train_plot(self.training_losses,self.test_losses,self.get_save_path(),fold_num,cycle=self.cycle)
-            plot_input_vs_output(input_list,output_list,correlation,False,self.get_save_path(),fold=fold_num,cycle=self.cycle)
-            plot_input_vs_output(test_input_list,test_output_list,test_correlation,True,self.get_save_path(),fold=fold_num,cycle=self.cycle)
-            create_corr_hist(corr_list,correlation,self.get_save_path(),False,fold=fold_num,cycle=self.cycle)
-            create_corr_hist(test_corr_list,test_correlation,self.get_save_path(),True,fold=fold_num,cycle=self.cycle)
-            ko_activity_dir = self.get_save_path()+'/ko_activities_cycle'+str(self.cycle)+'_fold'+str(fold_num)
+                    create_moa_figs(self.moa_train_losses,self.moa_test_losses,self.moa_violation_count_train,self.moa_violation_count_test,save_path,fold=fold_num,cycle=self.cycle)
+            create_test_vs_train_plot(self.training_losses,self.test_losses,save_path,fold_num,cycle=self.cycle)
+            plot_input_vs_output(input_list,output_list,correlation,False,save_path,fold=fold_num,cycle=self.cycle)
+            plot_input_vs_output(test_input_list,test_output_list,test_correlation,True,save_path,fold=fold_num,cycle=self.cycle)
+            create_corr_hist(corr_list,correlation,save_path,False,fold=fold_num,cycle=self.cycle)
+            create_corr_hist(test_corr_list,test_correlation,save_path,True,fold=fold_num,cycle=self.cycle)
+            ko_activity_dir = save_path+'/ko_activities_cycle'+str(self.cycle)+'_fold'+str(fold_num)
             self.ko_activity_dirs.append(ko_activity_dir)
             if not os.path.exists(ko_activity_dir):
                 os.makedirs(ko_activity_dir)
             auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
             print("ko tf ranks",ko_tf_ranks)
-            plot_ko_rank_vs_connections(self.data_obj,ko_tf_ranks,self.get_save_path(),fold=fold_num,cycle=self.cycle)
+            plot_ko_rank_vs_connections(self.data_obj,ko_tf_ranks,save_path,fold=fold_num,cycle=self.cycle)
             #get_blood_analysis(self.data_obj,self.blood_data,self.blood_meta_data,self.get_save_path(),self.trained_embedding_model,fold=fold_num,cycle=self.cycle)
             self.aucs.append(auc)
+            self.test_corrs.append(test_correlation)
+            self.train_corrs.append(correlation)
 
-            TF_ko_heatmap(ranked_df,self.get_save_path(),'ranked_df',fold=fold_num,cycle=self.cycle)
-            TF_ko_heatmap(activity_df,self.get_save_path(),'activity_df',fold=fold_num,cycle=self.cycle)
+            #TF_ko_heatmap(ranked_df,self.get_save_path(),'ranked_df',fold=fold_num,cycle=self.cycle)
+            #TF_ko_heatmap(activity_df,self.get_save_path(),'activity_df',fold=fold_num,cycle=self.cycle)
         if self.moa > 0:
                 self.moa_test_losses = []
                 self.moa_train_losses = []
@@ -376,14 +382,21 @@ class Train():
         return loss
 
 
-    def save_train_test_loss_data(self):
+    def save_train_test_loss_data(self, fold, cycle):
         """
         Saves a table of train and test losses for each epoch
+        """
+        save_path = self.get_save_path()+'/fold'+str(fold)+'_cycle'+str(cycle)+'/'
+        with open(save_path+'/train_rmse.pkl','wb+') as f:
+            pkl.dump(self.training_losses,f)
+        with open(save_path+'/test_rmse.pkl','wb+') as f:
+            pkl.dump(self.test_losses,f)
         """
         with open(self.get_save_path()+'/rmse', 'w+') as f:
             f.write("epoch  train  test \n")
             for i in range(len(self.training_losses)):
                 f.write(str(i)+" "+str(self.training_losses[i])+"\n "+str(self.test_losses[i])+"\n")
+        """
 
     def get_save_path(self):
         """
@@ -427,8 +440,10 @@ class Train():
             save_path += "_lrensched_maxlr"+str(self.en_max_lr)
         if self.de_lr_sched:
             save_path += "_lrensched_maxlr"+str(self.de_max_lr)
-        if self.l2_reg > 0:
-            save_path += "_l2"+str(self.l2_reg)
+        if self.de_l2_reg > 0:
+            save_path += "_del2"+str(self.de_l2_reg)
+        if self.en_l2_reg > 0:
+            save_path += "_enl2"+str(self.en_l2_reg)
         if self.l1 > 0:
             save_path += "_l1"+str(self.l1)
         if self.moa > 0:
@@ -515,6 +530,7 @@ class Train():
             for fold in range(k_splits): 
                     prep_data_start = time.time()
                     print('Fold {}'.format(fold + 1))
+                    os.mkdir(self.get_save_path()+'/fold'+str(fold)+'_cycle'+str(cycle))
                     train_data, test_data = self.data_obj.get_train_test_data(fold,k_splits,dataset,splits,train_splits,test_splits)
                     train_data_celltype = CellTypeDataset(train_data,self.data_obj.get_output_data(train_data))
                     test_data_celltype = CellTypeDataset(test_data,self.data_obj.get_output_data(test_data))
@@ -545,6 +561,10 @@ class Train():
 
         with open(self.get_save_path()+'/aucs.pkl','wb+') as f:
             pkl.dump(self.aucs,f)
+        with open(self.get_save_path()+'/train_corrs.pkl','wb+') as f:
+            pkl.dump(self.train_corrs,f)
+        with open(self.get_save_path()+'/test_corrs.pkl','wb+') as f:
+            pkl.dump(self.test_corrs,f)
 
             #if k_splits > 1:
             #        validation_data = dataset.iloc[validation_split[0]:validation_split[1]]
@@ -564,7 +584,8 @@ if __name__ == "__main__":
         parser.add_argument('--save_path',type=str,required=False,default="figures/",help='directory where you want error data and figures to saved')
         parser.add_argument('--fig_freq',type=int,required=False,default=10,help='how often do you want figures on epochs (ie. every 10 epochs)')
         parser.add_argument('--model_type',type=str,required=False,default='ae',help='describe model')
-        parser.add_argument('--l2',type=float,required=False,default=0,help='value for l2 regularization')
+        parser.add_argument('--en_l2',type=float,required=False,default=0,help='value for l2 regularization')
+        parser.add_argument('--de_l2',type=float,required=False,default=0,help='value for l2 regularization')
         parser.add_argument('--dropout',type=float,required=False,default=0,help='prob of a given node being deactivated')
         parser.add_argument('--save_model',type=str,required=False,default=False,help='whether you want the model data to be saved')
         parser.add_argument('--input_data_path',type=str,required=True,help='path for input data')
@@ -612,7 +633,8 @@ if __name__ == "__main__":
         encoder_depth = args.encoder_depth
         decoder_depth = args.decoder_depth
 
-        l2_reg = args.l2
+        en_l2_reg = args.en_l2
+        de_l2_reg = args.de_l2
         l1 = args.l1
         batch_norm = args.batch_norm.lower() == 'true'
         dropout_rate = args.dropout
@@ -668,7 +690,8 @@ if __name__ == "__main__":
             "de_max_lr":de_max_lr,
             "warm_restart":warm_restart,
 
-            "l2_reg":l2_reg,
+            "en_l2_reg":en_l2_reg,
+            "de_l2_reg":de_l2_reg,
             "l1":l1,
             "batch_norm":batch_norm,
             "dropout_rate":dropout_rate,

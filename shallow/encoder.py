@@ -22,18 +22,20 @@ class AEEncoder(nn.Module):
 
                 #activ_func = nn.LeakyReLU()
                 activ_func = nn.SELU()
+
+                self.dropout = nn.Dropout(self.dropout_rate)
                 
                 encoder = collections.OrderedDict()
-                if self.dropout_rate > 0:
-                    encoder['do_encoder1'] = nn.Dropout(self.dropout_rate)
                 encoder['encoder_1'] = sl.SparseLinear(max(self.shallow_matrix[1])+1,max(self.shallow_matrix[0])+1,connectivity=torch.tensor(self.shallow_matrix))
                 encoder['encoder_activ1'] = activ_func
-                if self.is_bn:
-                    encoder['bn_encoder1'] = nn.BatchNorm1d(max(self.shallow_matrix[0])+1,affine=False)
+
+                #if self.is_bn:
+                #    encoder['bn_encoder1'] = nn.BatchNorm1d(max(self.shallow_matrix[0])+1,affine=False)
 
                 self.encoder = nn.Sequential(encoder)
 
 
 
         def forward(self,features):
-                return self.encoder(features)
+                x = self.dropout(features)
+                return self.encoder(x)

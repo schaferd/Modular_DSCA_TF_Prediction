@@ -20,13 +20,14 @@ class AEDecoder(nn.Module):
                 self.shallow_matrix = shallow.shallow_layer
 
                 activ_func = nn.LeakyReLU()
+                #activ_func = nn.SELU()
                 
                 decoder = collections.OrderedDict()
-                print(torch.ops.torch_scatter.cuda_version())
+
                 decoder['decoder_1'] = sl.SparseLinear(max(self.shallow_matrix[1])+1,max(self.shallow_matrix[0])+1,connectivity=torch.tensor(self.shallow_matrix).cpu())
-                decoder['decoder_activ1'] = activ_func
-                if self.is_bn:
-                    decoder['bn_decoder1'] = nn.BatchNorm1d(max(self.shallow_matrix[0])+1,affine=False)
+                #decoder['decoder_activ1'] = activ_func
+                #if self.is_bn:
+                #    decoder['bn_decoder1'] = nn.BatchNorm1d(max(self.shallow_matrix[0])+1,affine=False)
 
                 self.decoder = nn.Sequential(decoder)
 

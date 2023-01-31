@@ -16,10 +16,13 @@ class AEEncoder(nn.Module):
 
                 self.tf_size = self.data_obj.tfs.size
                 self.gene_size = len(self.data_obj.gene_names)
+                self.dropout_rate = kwargs["dropout_rate"]
                 #self.input_size = len(self.data_obj.input_data)
 
                 mid_layer_size = self.gene_size*self.width_multiplier
                 activ_func = nn.SELU()
+
+                self.dropout = nn.Dropout(self.dropout_rate)
 
                 encoder = collections.OrderedDict()
 
@@ -36,4 +39,5 @@ class AEEncoder(nn.Module):
                 self.ae_encoder = nn.Sequential(encoder)
 
         def forward(self,features):
-                return self.ae_encoder(features)
+                x = self.dropout(features)
+                return self.ae_encoder(x)

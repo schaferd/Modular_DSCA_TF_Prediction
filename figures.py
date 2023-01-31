@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import pickle as pkl
 import seaborn as sns
 import numpy as np
 import mpl_scatter_density
@@ -47,24 +48,33 @@ def plot_input_vs_output(ae_input,ae_output,corr,is_test,save_path,fold=0,cycle=
     new_output = np.asarray(flatten_list(ae_output)).flatten()
     ax_min = min(min(new_input),min(new_output))
     ax_max = max(max(new_input),max(new_output))
-    plt.hist2d(x=new_output,y=new_input,bins=200,norm=mpl.colors.LogNorm())
-    plt.ylabel('Input',size=12)
-    plt.xlabel('Output',size=12)
+    plt.hist2d(x=new_input,y=new_output,bins=200,norm=mpl.colors.LogNorm())
+    plt.ylabel('Output',size=12)
+    plt.xlabel('Input',size=12)
     plt.xlim(ax_min,ax_max)
     plt.ylim(ax_min,ax_max)
     #plt.axis('square')
     if is_test:
         plt.title('AE Input vs. Output: Test Correlation:'+str(corr))
         plt.savefig(save_path+'/test_y_vsyhat_scatter_cycle'+str(cycle)+'_fold'+str(fold)+'_corr'+str(corr)+'.png')
+        with open(save_path+'/test_input_cycle'+str(cycle)+'_fold'+str(fold)+'_corr'+str(corr)+'.pkl','wb') as f:
+            pkl.dump(new_input,f)
+        with open(save_path+'/test_output_cycle'+str(cycle)+'_fold'+str(fold)+'_corr'+str(corr)+'.pkl','wb') as f:
+            pkl.dump(new_output,f)
     else:
-        plt.title('AE Input vs. Output: Train Correlation'+str(corr))
-        plt.savefig(save_path+'/train_y_vsyhat_scatter_cycle'+str(cycle)+'_fold'+str(fold)+'_corr'+str(corr)+'.png')
+        #plt.title('AE Input vs. Output: Train Correlation'+str(corr))
+        #plt.savefig(save_path+'/train_y_vsyhat_scatter_cycle'+str(cycle)+'_fold'+str(fold)+'_corr'+str(corr)+'.png')
+        with open(save_path+'/train_input_cycle'+str(cycle)+'_fold'+str(fold)+'_corr'+str(corr)+'.pkl','wb') as f:
+            pkl.dump(new_input,f)
+        with open(save_path+'/train_output_cycle'+str(cycle)+'_fold'+str(fold)+'_corr'+str(corr)+'.pkl','wb') as f:
+            pkl.dump(new_output,f)
     plt.clf()
 
 def create_test_vs_train_plot(training_losses,test_losses,save_path,fold=0,cycle=0):
     """
     Saves RMSE vs. Epochs line plot
     """
+    plt.clf()
     fig = plt.figure(4)
     training_losses = [tensor for tensor in training_losses[fold]]# if type(tensor) == torch.Tensor]
     test_losses = [tensor for tensor in test_losses[fold]]

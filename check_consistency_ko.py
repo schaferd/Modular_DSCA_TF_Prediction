@@ -112,6 +112,11 @@ class Consistency():
         cv_mean = mean[order]
         cv_std = std[order]
 
+        with open(self.savedir+"/consistency_std.pkl", 'wb+') as f:
+            pkl.dump(cv_std,f)
+        with open(self.savedir+"/consistency_rand_std.pkl", 'wb+') as f:
+            pkl.dump(rand_std,f)
+
         auc_rand = metrics.auc(x,rand_std)
         auc = metrics.auc(x,cv_std)
         
