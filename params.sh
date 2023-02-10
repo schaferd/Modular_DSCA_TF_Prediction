@@ -1,8 +1,8 @@
 #!/bin/bash
 
 export MODEL_TYPE='_' # name for model
-export EPOCHS=50 #how many epochs will be created
-export FIG_FREQ=5 # how often figures will get generated
+export EPOCHS=100 #how many epochs will be created
+export FIG_FREQ=20 # how often figures will get generated
 
 export SAVE_MODEL=False # true if model saves
 export SAVE_FIGS=True # true if model saves figures
@@ -10,14 +10,14 @@ export RECORD=False
 export CHECK_CONSISTENCY=false
 
 #########ENCODER#########
-export TF_GROUPED_FC_INDEP_ENCODER=true
+export FULLY_CONNECTED_ENCODER=true
+export TF_GROUPED_FC_INDEP_ENCODER=false
 export SHALLOW_ENCODER=false
-export FULLY_CONNECTED_ENCODER=false
 
 #########DECODER#########
+export FULLY_CONNECTED_DECODER=true
 export GENE_GROUPED_FC_INDEP_DECODER=false
-export SHALLOW_DECODER=true
-export FULLY_CONNECTED_DECODER=false
+export SHALLOW_DECODER=false
 
 
 export SPLITS=5 # how many splits you want for cross validation
@@ -26,6 +26,7 @@ export CYCLES=2
 export EN_L2=0 # L2 norm for Encoder
 export DE_L2=0 # L2 norm for Decoder
 export DROPOUT=0 # dropout rate
+export NOISE=0 #Add Gaussian Noise to input
 export BATCH_NORM=False # true if want batch norm
 
 export MOA_BETA=0.9

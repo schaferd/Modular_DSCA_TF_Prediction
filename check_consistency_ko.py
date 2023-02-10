@@ -31,12 +31,17 @@ class Consistency():
                 self.index_to_ko_tfs.append(pkl.load(f))
 
         print("CHECKING CONSISTENCY")
-        self.scaled_rankings = [self.rank_matrix_only_pertTFs(self.raw_activities[i],self.index_to_ko_tfs[i]) for i in range(len(self.raw_activities))]
-        self.perturbation_info = [self.get_perturbation_info(self.scaled_rankings[i],self.index_to_ko_tfs[i]) for i in range(len(self.scaled_rankings))]
+        self.rankings = [self.rank_matrix_only_pertTFs(self.raw_activities[i],self.index_to_ko_tfs[i]) for i in range(len(self.raw_activities))]
+        #self.perturbation_info = [self.get_perturbation_info(self.scaled_rankings[i],self.index_to_ko_tfs[i]) for i in range(len(self.scaled_rankings))]
+        self.perturbation_info = [self.get_perturbation_info(self.rankings[i],self.index_to_ko_tfs[i]) for i in range(len(self.rankings))]
         self.tfs_of_interest = [self.get_tfs_of_interest(i) for i in self.perturbation_info]
         self.results = self.combine_samples()
+        friedman = stats.friedmanchisquare(*self.results)
 
-        self.mean = self.encoder_dist()
+        print(friedman)
+        with open(save_path+'/consistency_frieman.pkl','wb+') as f:
+            pkl.dump(friedman,f)
+
         
     def load_diff_activities(self,activity_file):
         df = pd.read_csv(activity_file,index_col=0)
@@ -50,6 +55,15 @@ class Consistency():
         scaled_rank_matrix.index = pert_tfs
 
     def rank_matrix_only_pertTFs(self, diff_activities,koed_tfs):
+        koed_tfs_list = list(set(koed_tfs.values()))
+        pert_tfs = list(diff_activities.index)
+        diff_activities = diff_activities.filter(items=koed_tfs_list)
+        ranked_matrix = diff_activities.rank(axis = 1,method='min',na_option='keep',ascending=True)
+        ranked_matrix = ranked_matrix.reset_index(drop=True)
+        ranked_matrix.index = pert_tfs
+        return ranked_matrix
+
+    def scaled_rank_matrix_only_pertTFs(self, diff_activities,koed_tfs):
         koed_tfs_list = list(set(koed_tfs.values()))
         pert_tfs = list(diff_activities.index)
         diff_activities = diff_activities.filter(items=koed_tfs_list)
@@ -95,7 +109,7 @@ class Consistency():
 
         new_df = df0.loc[1:,:]
         print(new_df)
-        return new_df
+        return new_df.to_numpy()
 
 
     def encoder_dist(self,make_plot=True):

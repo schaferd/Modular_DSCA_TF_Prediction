@@ -43,9 +43,6 @@ class ActivityInput():
         self.negative_samples_df = pd.read_csv(neg_file)
         self.negative_samples_df = self.negative_samples_df.drop(columns=['Unnamed: 0'])
 
-        print('positive samples df')
-        print(self.positive_samples_df)
-
         self.pos_samples = self.filter_matrix(self.positive_samples_df)
         self.neg_samples = self.filter_matrix(self.negative_samples_df)
 
@@ -55,8 +52,6 @@ class ActivityInput():
     def filter_matrix(self,df):
         temp_df = pd.DataFrame(columns = self.ae_input_genes)
         df0 = pd.DataFrame(0,index=[0],columns=temp_df.columns)
-        print(df0)
-        print(df0.shape)
 
         input_df = pd.concat([df0,df],ignore_index=True)
 
@@ -64,7 +59,6 @@ class ActivityInput():
         input_df = input_df.fillna(0)
         matrix = torch.from_numpy(np.array(input_df).astype(np.float)).to(device).float()
         print('ae input genes',len(self.ae_input_genes))
-        print('matrix shape',matrix.shape)
         return matrix
 
 

@@ -22,7 +22,7 @@ import shutil
 import pickle as pkl
 from data_class import CellTypeDataset
 from ae_model import AE
-from eval_funcs import get_correlation,get_ko_roc_curve,  plot_ko_rank_vs_connections#, get_essentiality_roc_curve, get_blood_analysis
+from eval_funcs import get_correlation,get_ko_roc_curve, get_knocktf_ko_roc_curve, plot_ko_rank_vs_connections#, get_essentiality_roc_curve, get_blood_analysis
 from figures import plot_input_vs_output,create_test_vs_train_plot,create_corr_hist,create_moa_figs,TF_ko_heatmap
 from rnaseq_eval import RNASeqTFEval
 
@@ -84,6 +84,7 @@ class Train():
         self.de_l2_reg = self.param_dict["de_l2_reg"]
         self.l1 = self.param_dict["l1"]
         self.dropout_rate = self.param_dict["dropout_rate"]
+        self.noise = self.param_dict["noise"]
         self.batch_norm = self.param_dict["batch_norm"]
         self.relationships_filter = self.param_dict["relationships_filter"]
 
@@ -262,6 +263,8 @@ class Train():
                 os.makedirs(ko_activity_dir)
             auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
             print("ko tf ranks",ko_tf_ranks)
+            #auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            #print("knocktf ko tf ranks",ko_tf_ranks)
             plot_ko_rank_vs_connections(self.data_obj,ko_tf_ranks,save_path,fold=fold_num,cycle=self.cycle)
             #get_blood_analysis(self.data_obj,self.blood_data,self.blood_meta_data,self.get_save_path(),self.trained_embedding_model,fold=fold_num,cycle=self.cycle)
             self.aucs.append(auc)
@@ -288,6 +291,8 @@ class Train():
         epoch_moa_violations = 0
         self.model.train()
         for samples, labels in train_loader:
+
+            samples = samples + self.noise*(0.1**0.5)*torch.randn_like(samples)
 
             samples = samples.to(device)
             print(samples.shape)
@@ -450,6 +455,8 @@ class Train():
             save_path +="_moa"+str(self.moa)
         if self.dropout_rate > 0:
             save_path += "_do"+str(self.dropout_rate)
+        if self.noise > 0:
+            save_path += "_noise"+str(self.noise)
         if self.warm_restart > 0:
             save_path += "_wr"+str(self.warm_restart)
         if self.batch_norm:
@@ -587,6 +594,7 @@ if __name__ == "__main__":
         parser.add_argument('--en_l2',type=float,required=False,default=0,help='value for l2 regularization')
         parser.add_argument('--de_l2',type=float,required=False,default=0,help='value for l2 regularization')
         parser.add_argument('--dropout',type=float,required=False,default=0,help='prob of a given node being deactivated')
+        parser.add_argument('--noise',type=float,required=True)
         parser.add_argument('--save_model',type=str,required=False,default=False,help='whether you want the model data to be saved')
         parser.add_argument('--input_data_path',type=str,required=True,help='path for input data')
         parser.add_argument('--sparse_data_path',type=str,required=True,help='path for sparse data')
@@ -637,6 +645,7 @@ if __name__ == "__main__":
         de_l2_reg = args.de_l2
         l1 = args.l1
         batch_norm = args.batch_norm.lower() == 'true'
+        noise = args.noise
         dropout_rate = args.dropout
         k = args.k_splits
         
@@ -694,6 +703,7 @@ if __name__ == "__main__":
             "de_l2_reg":de_l2_reg,
             "l1":l1,
             "batch_norm":batch_norm,
+            "noise":noise,
             "dropout_rate":dropout_rate,
 
             "input_path":input_path,

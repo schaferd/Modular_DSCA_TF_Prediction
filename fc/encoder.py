@@ -22,9 +22,9 @@ class AEEncoder(nn.Module):
                 mid_layer_size = self.gene_size*self.width_multiplier
                 activ_func = nn.SELU()
 
-                self.dropout = nn.Dropout(self.dropout_rate)
-
                 encoder = collections.OrderedDict()
+
+                encoder['do_1'] = nn.Dropout(self.dropout_rate)
 
                 encoder['encoder_1'] = nn.Linear(self.gene_size,mid_layer_size)
                 encoder['encoder_activ1'] = activ_func
@@ -39,5 +39,4 @@ class AEEncoder(nn.Module):
                 self.ae_encoder = nn.Sequential(encoder)
 
         def forward(self,features):
-                x = self.dropout(features)
-                return self.ae_encoder(x)
+                return self.ae_encoder(features)

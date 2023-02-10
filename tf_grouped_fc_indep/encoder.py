@@ -14,7 +14,6 @@ class AEEncoder(nn.Module):
         def __init__(self,**kwargs):
                 super().__init__()
 
-
                 self.data_obj = kwargs["data"]	
 
                 self.dropout_rate = kwargs["dropout_rate"]
@@ -33,7 +32,7 @@ class AEEncoder(nn.Module):
 
                 encoder = collections.OrderedDict()
 
-                self.dropout = nn.Dropout(self.dropout_rate)
+                encoder['do_1'] = nn.Dropout(self.dropout_rate)
 
                 encoder['encoder_1'] = sl.SparseLinear(max(self.first_weights[1])+1,max(self.first_weights[0])+1,connectivity=torch.tensor(self.first_weights))
                 encoder['encoder_activ1'] = activ_func
@@ -58,5 +57,4 @@ class AEEncoder(nn.Module):
 
 
         def forward(self,features):
-            x = self.dropout(features)
-            return self.encoder(x)
+            return self.encoder(features)
