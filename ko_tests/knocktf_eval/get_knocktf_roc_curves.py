@@ -127,6 +127,7 @@ class getKnockTFROCCurve():
         return auc,fpr,tpr
 
     def plot_ROC(self,tpr,fpr,auc):
+        plt.clf()
         plt.plot(fpr,tpr,color="darkorange",label="ROC Curve (area = %0.2f)"%auc)
         plt.plot([0,1],[0,1],color="navy",linestyle="--")
         plt.xlim([0.0,1.0])

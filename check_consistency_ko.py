@@ -1,151 +1,165 @@
 import pandas as pd
 import seaborn as sns
+from scipy.stats import ttest_1samp, ttest_ind, kendalltau
 import pickle as pkl
 import os
 import sys
 from scipy import stats
 from sklearn import metrics
 import numpy as np
-import torch 
 from data_processing import DataProcessing
 from random import sample
 import matplotlib.pyplot as plt
 
-is_gpu = False
-if torch.cuda.is_available():
-    device = torch.device('cuda:0')
-    is_gpu = True
-print("is gpu "+str(is_gpu))
+def calculate_consistency(activity_dir):
+
+    raw_activities, index_to_ko_tfs = get_data_paths(activity_dir)
+    print("CHECKING CONSISTENCY")
+
+    rankings = [rank_filtered_ko_matrix(raw_activities[i],index_to_ko_tfs[i],scaled=True) for i in range(len(raw_activities))]
+    rankings = [get_perturbation_info(rankings[i],index_to_ko_tfs[i]) for i in range(len(rankings))]
+    rankings = [get_tfs_of_interest(i) for i in rankings]
+    rankings = combine_samples(rankings)
+    #distances = l2_dist(rankings)
+    distances = kendall_w(rankings)
+
+    #rand_distances = make_random_ranks(raw_activities,index_to_ko_tfs)
+    #plot_distances_distribution(rand_distances.flatten(), distances)
 
 
-class Consistency():
+    #stat, pval = ttest_ind(distances,rand_distances)
+    #mean_diff = np.mean(rand_distances) - np.mean(distances)
+    #print('mean diff', mean_diff)
+    #info_dict = {'pval': pval, 'rand_distances':rand_distances, 'distances':distances, 'mean_diff':mean_diff}
+    #with open(activity_dir+"/consistency_info.pkl", 'wb+') as f:
+    #    pkl.dump(info_dict,f)
 
-    def __init__(self, save_path, activity_paths):
-        self.savedir = save_path 
-        self.raw_activities = []
-        self.index_to_ko_tfs = []
+    return distances
 
-        for i in activity_paths:
-            self.raw_activities.append(self.load_diff_activities(i+'/diff_activities.csv'))
-            with open(i+'/ko_tf_index.pkl','rb') as f:
-                self.index_to_ko_tfs.append(pkl.load(f))
 
-        print("CHECKING CONSISTENCY")
-        self.rankings = [self.rank_matrix_only_pertTFs(self.raw_activities[i],self.index_to_ko_tfs[i]) for i in range(len(self.raw_activities))]
-        #self.perturbation_info = [self.get_perturbation_info(self.scaled_rankings[i],self.index_to_ko_tfs[i]) for i in range(len(self.scaled_rankings))]
-        self.perturbation_info = [self.get_perturbation_info(self.rankings[i],self.index_to_ko_tfs[i]) for i in range(len(self.rankings))]
-        self.tfs_of_interest = [self.get_tfs_of_interest(i) for i in self.perturbation_info]
-        self.results = self.combine_samples()
-        friedman = stats.friedmanchisquare(*self.results)
+def get_data_paths(activity_dir):
+    raw_activities = []
+    index_to_ko_tfs = []
 
-        print(friedman)
-        with open(save_path+'/consistency_frieman.pkl','wb+') as f:
-            pkl.dump(friedman,f)
-
+    activity_paths = [activity_dir+'/'+f for f in os.listdir(activity_dir) if "fold" in f and "cycle" in f and os.path.isfile(activity_dir+f) == False]
+    ko_activity_paths = []
+    for i, f in enumerate(activity_paths):
+        paths = os.listdir(f)
+        for p in paths:
+            if "ko_activities" in p:
+                ko_activity_paths.append(f+'/'+p+'/')
         
-    def load_diff_activities(self,activity_file):
-        df = pd.read_csv(activity_file,index_col=0)
-        return df
 
-    def rank_matrix(self, diff_activities):
-        pert_tfs = list(diff_activities.index)
-        ranked_matrix = diff_activities.rank(axis = 1,method='min',na_option='keep',ascending=True)
-        ranked_matrix = ranked_matrix.reset_index(drop=True)
-        scaled_rank_matrix = (ranked_matrix.T/ranked_matrix.max(axis=1)).T
-        scaled_rank_matrix.index = pert_tfs
+    for i in ko_activity_paths:
+        raw_activities.append(pd.read_csv(i+'/diff_activities.csv',index_col=0))
+        with open(i+'/ko_tf_index.pkl','rb') as f:
+            index_to_ko_tfs.append(pkl.load(f))
 
-    def rank_matrix_only_pertTFs(self, diff_activities,koed_tfs):
-        koed_tfs_list = list(set(koed_tfs.values()))
-        pert_tfs = list(diff_activities.index)
-        diff_activities = diff_activities.filter(items=koed_tfs_list)
-        ranked_matrix = diff_activities.rank(axis = 1,method='min',na_option='keep',ascending=True)
-        ranked_matrix = ranked_matrix.reset_index(drop=True)
-        ranked_matrix.index = pert_tfs
-        return ranked_matrix
+    return raw_activities, index_to_ko_tfs
 
-    def scaled_rank_matrix_only_pertTFs(self, diff_activities,koed_tfs):
-        koed_tfs_list = list(set(koed_tfs.values()))
-        pert_tfs = list(diff_activities.index)
-        diff_activities = diff_activities.filter(items=koed_tfs_list)
-        ranked_matrix = diff_activities.rank(axis = 1,method='min',na_option='keep',ascending=True)
-        ranked_matrix = ranked_matrix.reset_index(drop=True)
-        scaled_rank_matrix = (ranked_matrix.T/ranked_matrix.max(axis=1)).T
-        scaled_rank_matrix.index = pert_tfs
-        return scaled_rank_matrix
+    
+def rank_matrix(diff_activities,scaled=False):
+    pert_tf_ids = list(diff_activities.index)
+    ranked_matrix = diff_activities.rank(axis = 1,method='min',na_option='keep',ascending=True)
+    ranked_matrix = ranked_matrix.reset_index(drop=True)
+    if scaled == True:
+        ranked_matrix = (ranked_matrix.T/ranked_matrix.max(axis=1)).T
+    ranked_matrix.index = pert_tf_ids
+    return ranked_matrix
 
-    def make_random_ranks(self):
-        rand = np.random.rand(*self.results.shape)
-        ranked = rand.argsort()
-        ranked = ranked/np.amax(ranked,axis=1)[:,None]
-        mean = np.mean(ranked,axis=0)
-        std = np.std(ranked,axis=0)
-        return mean,std
+def rank_filtered_ko_matrix(diff_activities,koed_tfs,scaled=False):
+    koed_tfs_list = list(set(koed_tfs.values()))
+    diff_activities = diff_activities.filter(items=koed_tfs_list)
+    ranked_matrix = rank_matrix(diff_activities,scaled=scaled)
+    return ranked_matrix
 
-    def get_perturbation_info(self,scaled_rankings,ko_tf_index):
-        rank_df = pd.melt(scaled_rankings,value_vars=scaled_rankings.columns,ignore_index=False)
-        rank_df['perturbed tf'] = [ko_tf_index[i] for i in rank_df.index]
-        rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
-        rank_df.rename({'variable':'regulon'},axis=1,inplace=True)
+def make_random_ranks(run_dir,scaled=True,reps=20):
+     
+    dfs, koed_tfs = get_data_paths(run_dir)
+    samples = None 
+    for j in range(reps): 
+        rand_rankings = [pd.DataFrame(np.random.rand(*df.to_numpy().shape), columns = df.columns, index=df.index) for df in dfs]
+        rand_rankings = [rank_filtered_ko_matrix(rand_rankings[i],koed_tfs[i],scaled=scaled)for i in range(len(rand_rankings))]
+        rand_rankings = [get_perturbation_info(rand_rankings[i],koed_tfs[i]) for i in range(len(rand_rankings))]
+        rand_rankings = [get_tfs_of_interest(i) for i in rand_rankings]
+        rand_rankings = combine_samples(rand_rankings)
 
-        return rank_df#, unscaled_rank_df
+        #dists = l2_dist(rand_rankings)
+        dists = kendall_w(rand_rankings)
+        if samples is None:
+            samples = dists
+        else:
+            np.vstack((samples,dists))
+    return samples
 
-    def get_tfs_of_interest(self, perturbation_df):
-        df_tf_of_interest = perturbation_df.copy()
-        pert_tfs = set(df_tf_of_interest['perturbed tf'].tolist())
-        pred_tfs = set(df_tf_of_interest['regulon'].tolist())
-        tfs_of_interest = list(pert_tfs.intersection(pred_tfs))
-        df_tf_of_interest = df_tf_of_interest[df_tf_of_interest['regulon'].isin(tfs_of_interest)]
-        df_tf_of_interest['is tf perturbed'] = (df_tf_of_interest['regulon'] == df_tf_of_interest['perturbed tf'])
-        koed_tfs_df = df_tf_of_interest.loc[df_tf_of_interest['is tf perturbed'] == True]
-        koed_tfs_df = koed_tfs_df.drop(['regulon','perturbed tf', 'is tf perturbed'],axis=1).T
+def plot_distances_distribution(null_distances, alt_distances):
+    fig, ax = plt.subplots()
 
-        return koed_tfs_df
+    ax.hist(null_distances,bins=20)
+    ax.hist(alt_distances,bins=20)
+    fig.savefig("consistency_dist_hist.png")
 
-    def combine_samples(self):
-        df0 = pd.DataFrame(0,index=[0],columns = self.tfs_of_interest[0].columns)
+"""
+Melt Rank df and add column with KO TF info
+columns: rank, KO TF in sample, TF activity
+"""
+def get_perturbation_info(rankings,ko_tf_index):
+    rankings['perturbed tf'] = [ko_tf_index[i] for i in rankings.index]
+    value_vars = [col for col in rankings.columns if col != 'perturbed tf']
+    rank_df = pd.melt(rankings,value_vars=value_vars,id_vars =['perturbed tf'],ignore_index=False)
+    rank_df.rename({'value':'ranking'},axis=1,inplace=True)
+    rank_df.rename({'variable':'regulon'},axis=1,inplace=True)
 
-        for df in self.tfs_of_interest:
-            df0 = pd.concat([df0,df],ignore_index=True)
+    return rank_df
 
-        new_df = df0.loc[1:,:]
-        print(new_df)
-        return new_df.to_numpy()
+"""
+Only select Rankings of TFs where the TF has been knocked out
+"""
+def get_tfs_of_interest(perturbation_df):
+    df_tf_of_interest = perturbation_df.copy()
+    pert_tfs = set(df_tf_of_interest['perturbed tf'].tolist())
+    pred_tfs = set(df_tf_of_interest['regulon'].tolist())
+    tfs_of_interest = list(pert_tfs.intersection(pred_tfs))
+    df_tf_of_interest = df_tf_of_interest[df_tf_of_interest['regulon'].isin(tfs_of_interest)]
+    df_tf_of_interest['is tf perturbed'] = (df_tf_of_interest['regulon'] == df_tf_of_interest['perturbed tf'])
+    koed_tfs_df = df_tf_of_interest.loc[df_tf_of_interest['is tf perturbed'] == True]
+    koed_tfs_df = koed_tfs_df.drop(['regulon','perturbed tf', 'is tf perturbed'],axis=1).T
+
+    return koed_tfs_df
+
+def combine_samples(tfs_of_interest):
+    df0 = pd.DataFrame(0,index=[0],columns = tfs_of_interest[0].columns)
+
+    for df in tfs_of_interest:
+        df0 = pd.concat([df0,df],ignore_index=True)
+
+    new_df = df0.loc[1:,:]
+    return new_df.to_numpy()
+
+"""
+Calculates pairwise l2 distances between rows of a matrix
+Returns a symmetric matrix of distances between rows
+"""
+def l2_dist(rankings):
+    distances = None
+    for row in rankings:
+        dist = np.apply_along_axis(np.linalg.norm, 1, rankings-row)
+        if distances is None:
+            distances = dist
+        else:
+            distances = np.vstack((distances,dist))
+    distances = distances[np.triu_indices(distances.shape[0],k=1)]
+    return distances
+
+def kendall_w(rankings):
+    kendall_ws = []
+    for i,row_i in enumerate(rankings):
+        for j,row_j in enumerate(rankings[i+1:]):
+            if i != j:
+                kendall_ws.append(kendalltau(row_i,row_j)[0])
+    return kendall_ws
 
 
-    def encoder_dist(self,make_plot=True):
-        mean = np.array(np.mean(self.results,axis=0))
-        std = np.array(np.std(self.results,axis=0))
-
-        rand_mean,rand_std = self.make_random_ranks()
-        rand_order = rand_std.argsort()
-        rand_mean = rand_mean[rand_order]
-        rand_std = rand_std[rand_order]
-
-        x = np.arange(1,mean.shape[0]+1)
-        order = std.argsort()
-        cv_mean = mean[order]
-        cv_std = std[order]
-
-        with open(self.savedir+"/consistency_std.pkl", 'wb+') as f:
-            pkl.dump(cv_std,f)
-        with open(self.savedir+"/consistency_rand_std.pkl", 'wb+') as f:
-            pkl.dump(rand_std,f)
-
-        auc_rand = metrics.auc(x,rand_std)
-        auc = metrics.auc(x,cv_std)
-        
-        auc_diff = 0
-        if auc < auc_rand:
-            auc_diff = (auc_rand-auc)/auc_rand
-        print("auc diff consistency: ",str(auc_diff))
-        if make_plot == True:
-            plt.clf()
-            fig = plt.figure()
-            fig.set_size_inches(4,4)
-            plt.plot(x,cv_std,label="std")
-            plt.plot(x,rand_std,label="random std")
-            plt.title("consistency auc_diff: "+str(auc_diff))
-            plt.legend()
-            plt.savefig(self.savedir+'/consistency_plot.png')
-        return mean
-
+if __name__ == "__main__":
+    #calculate_consistency('./',['/nobackup/users/schaferd/ae_project_outputs/model_eval/l2norm_test/__shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.0001_enl20.0001_moa1.0_rel_conn10_2-7_21.2.1/fold0_cycle0/ko_activities_cycle0_fold0/', '/nobackup/users/schaferd/ae_project_outputs/model_eval/l2norm_test_diff/__tffc-fc_epochs100_batchsize128_enlr0.001_delr0.0001_del20.0001_enl21e-05_moa1.0_rel_conn10_2-8_12.58.19/fold0_cycle0/ko_activities_cycle0_fold0'])
+    calculate_consistency('/nobackup/users/schaferd/ae_project_outputs/model_eval/l2norm_test/__shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.0001_enl20.0001_moa1.0_rel_conn10_2-7_21.2.1/')

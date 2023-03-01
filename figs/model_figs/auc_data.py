@@ -6,19 +6,19 @@ import pandas as pd
 
 #KO ROC AUC DATA
 
-base_path = "/nobackup/users/schaferd/ae_project_outputs/model_eval/l2norm_test_diff/"
+base_path = "/nobackup/users/schaferd/ae_project_outputs/model_eval//"
 
-tffc_fc = pd.read_pickle(base_path+"__tffc-fc_epochs100_batchsize128_enlr0.001_delr0.0001_del20.0001_enl21e-05_moa1.0_rel_conn10_2-8_12.58.19/aucs.pkl") 
-tffc_shallow = pd.read_pickle(base_path+"__tffc-shallow_epochs100_batchsize128_enlr0.001_delr0.01_del21e-05_enl21e-05_moa1.0_rel_conn10_2-8_20.44.1/aucs.pkl")
-tffc_genefc = pd.read_pickle(base_path+"/__tffc-genefc_epochs100_batchsize128_enlr0.001_delr0.01_del21e-05_enl21e-05_moa1.0_rel_conn10_2-8_18.38.21/aucs.pkl")
+tffc_fc = pd.read_pickle(base_path+"/__tffc-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_2-10_16.14.43/aucs.pkl") 
+tffc_shallow = pd.read_pickle(base_path+"/__tffc-shallow_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_2-11_15.50.53/aucs.pkl")
+tffc_genefc = pd.read_pickle(base_path+"/__tffc-genefc_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_2-10_21.56.47/aucs.pkl")
 
-shallow_fc = pd.read_pickle(base_path+"__shallow-fc_epochs100_batchsize128_enlr0.001_delr0.0001_del20.0001_enl20.0001_moa1.0_rel_conn10_2-9_8.58.20/aucs.pkl")
-shallow_shallow = pd.read_pickle(base_path+"__shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.0001_enl20.0001_moa1.0_rel_conn10_2-9_8.58.28/aucs.pkl")
-shallow_genefc = pd.read_pickle(base_path+"__shallow-genefc_epochs100_batchsize128_enlr0.01_delr0.01_del20.0001_enl20.0001_moa1.0_rel_conn10_2-9_8.58.20/aucs.pkl")
+shallow_fc = pd.read_pickle(base_path+"/__shallow-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_2-11_15.50.58/aucs.pkl")
+shallow_shallow = pd.read_pickle(base_path+"/__shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_2-11_15.51.40/aucs.pkl")
+shallow_genefc = pd.read_pickle(base_path+"/__shallow-genefc_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_2-11_15.51.25/aucs.pkl")
 
-fc_fc= pd.read_pickle(base_path+"__fc-fc_epochs100_batchsize128_enlr0.0001_delr0.0001_del20.0001_enl20.0001_moa1.0_rel_conn10_2-8_12.56.13/aucs.pkl")
-fc_shallow = pd.read_pickle(base_path+"__fc-shallow_epochs100_batchsize128_enlr0.0001_delr0.001_del21e-05_enl20.0001_moa1.0_rel_conn10_2-8_12.57.4/aucs.pkl")
-fc_genefc = pd.read_pickle(base_path+"__fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0001_moa1.0_rel_conn10_2-8_12.56.37/aucs.pkl")
+fc_fc= pd.read_pickle(base_path+"/__fc-fc_epochs100_batchsize128_enlr0.0001_delr0.0001_moa1.0_rel_conn10_2-10_16.11.55/aucs.pkl")
+fc_shallow = pd.read_pickle(base_path+"/__fc-shallow_epochs100_batchsize128_enlr0.0001_delr0.001_moa1.0_rel_conn10_2-10_16.14.5/aucs.pkl")
+fc_genefc = pd.read_pickle(base_path+"/__fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_2-10_16.13.22/aucs.pkl")
 
 auc_dict = {'tf_fc':tffc_fc,'tf_shallow':tffc_shallow,'tf_gene':tffc_genefc, 'shallow_fc':shallow_fc, 'shallow_shallow':shallow_shallow, 'shallow_gene':shallow_genefc,'fc_fc':fc_fc,'fc_shallow':fc_shallow,'fc_gene':fc_genefc}
 
@@ -48,6 +48,4 @@ df.decoder = df.decoder.cat.set_categories(dec_sorter)
 df.encoder = df.encoder.astype("category")
 df.encoder = df.encoder.cat.set_categories(enc_sorter)
 
-print(df.decoder)
-print(df.encoder)
 

@@ -27,7 +27,7 @@ from figures import plot_input_vs_output,create_test_vs_train_plot,create_corr_h
 from rnaseq_eval import RNASeqTFEval
 
 from data_processing import DataProcessing
-from check_consistency_ko import Consistency
+#from check_consistency_ko import Consistency
 
 
 #device = torch.device('cpu')
@@ -142,6 +142,7 @@ class Train():
         self.embedding_losses = []
         self.trained_models = []
         self.aucs = []
+        self.knocktf_aucs = []
         self.train_corrs = []
         self.test_corrs = []
         self.ko_activity_dirs = []
@@ -262,12 +263,13 @@ class Train():
             if not os.path.exists(ko_activity_dir):
                 os.makedirs(ko_activity_dir)
             auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            self.aucs.append(auc)
             print("ko tf ranks",ko_tf_ranks)
-            #auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
-            #print("knocktf ko tf ranks",ko_tf_ranks)
+            auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            self.knocktf_aucs.append(auc)
+            print("knocktf ko tf ranks",ko_tf_ranks)
             plot_ko_rank_vs_connections(self.data_obj,ko_tf_ranks,save_path,fold=fold_num,cycle=self.cycle)
             #get_blood_analysis(self.data_obj,self.blood_data,self.blood_meta_data,self.get_save_path(),self.trained_embedding_model,fold=fold_num,cycle=self.cycle)
-            self.aucs.append(auc)
             self.test_corrs.append(test_correlation)
             self.train_corrs.append(correlation)
 
@@ -291,8 +293,8 @@ class Train():
         epoch_moa_violations = 0
         self.model.train()
         for samples, labels in train_loader:
-
-            samples = samples + self.noise*(0.1**0.5)*torch.randn_like(samples)
+            sign = 1 if random.random() >= 0.5 else -1;
+            samples = samples + sign*self.noise*torch.randn_like(samples)
 
             samples = samples.to(device)
             print(samples.shape)
@@ -568,6 +570,8 @@ class Train():
 
         with open(self.get_save_path()+'/aucs.pkl','wb+') as f:
             pkl.dump(self.aucs,f)
+        with open(self.get_save_path()+'/knocktf_aucs.pkl','wb+') as f:
+            pkl.dump(self.knocktf_aucs,f)
         with open(self.get_save_path()+'/train_corrs.pkl','wb+') as f:
             pkl.dump(self.train_corrs,f)
         with open(self.get_save_path()+'/test_corrs.pkl','wb+') as f:
@@ -729,7 +733,7 @@ if __name__ == "__main__":
         train = Train(hyper_params)
 
         train.cross_validation(k)
-        c = Consistency(train.get_save_path(),train.ko_activity_dirs)
+        #c = Consistency(train.get_save_path(),train.ko_activity_dirs)
         #c.plot_cv()
         #cv = c.encoder_dist()
         #c.plot_dist()

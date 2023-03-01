@@ -1,0 +1,93 @@
+0       d_fc
+1       d_fc
+2       d_fc
+3       d_fc
+4       d_fc
+       ...  
+25    d_gene
+26    d_gene
+27    d_gene
+28    d_gene
+29    d_gene
+Name: decoder, Length: 90, dtype: category
+Categories (3, object): ['d_shallow', 'd_gene', 'd_fc']
+0     e_shallow
+1     e_shallow
+2     e_shallow
+3     e_shallow
+4     e_shallow
+        ...    
+25         e_fc
+26         e_fc
+27         e_fc
+28         e_fc
+29         e_fc
+Name: encoder, Length: 90, dtype: category
+Categories (3, object): ['e_shallow', 'e_tf', 'e_fc']
+   decoder       AUC    encoder
+0     d_fc  0.568846  e_shallow
+1     d_fc  0.569830  e_shallow
+2     d_fc  0.547817  e_shallow
+3     d_fc  0.616652  e_shallow
+4     d_fc  0.548094  e_shallow
+..     ...       ...        ...
+25  d_gene  0.656228       e_fc
+26  d_gene  0.616155       e_fc
+27  d_gene  0.634566       e_fc
+28  d_gene  0.682044       e_fc
+29  d_gene  0.577207       e_fc
+
+[90 rows x 3 columns]
+['d_shallow', 'd_gene', 'd_fc']
+['e_shallow', 'e_tf', 'e_fc']
+
+AUC MODEL PVALUES
+tf_fc, tf_shallow 0.00014119738700344386
+tf_fc, tf_gene 0.0018350563730556418
+tf_fc, shallow_shallow 5.5787228081910075e-05
+tf_fc, shallow_gene 0.0005773641244689986
+tf_fc, fc_fc 0.048293369204481
+tf_fc, fc_shallow 0.02235711904453276
+tf_shallow, shallow_fc 0.007161327877590073
+tf_shallow, fc_fc 8.195147346702724e-08
+tf_gene, shallow_fc 0.03255141377908727
+tf_gene, fc_fc 1.1975582341204306e-06
+shallow_fc, shallow_shallow 0.0010507361143879308
+shallow_fc, shallow_gene 0.007475564107537155
+shallow_shallow, fc_fc 1.368289934680531e-07
+shallow_gene, fc_fc 9.816440705779258e-07
+fc_fc, fc_shallow 2.3974677749412352e-05
+fc_fc, fc_gene 0.005023654076771523
+
+CORR MODEL PVALUES
+tf_fc, tf_shallow 5.766178275226281e-25
+tf_fc, tf_gene 2.999887863633689e-26
+tf_fc, shallow_shallow 2.1732925651969144e-22
+tf_fc, shallow_gene 8.633514203784732e-25
+tf_fc, fc_fc 3.241105657101239e-07
+tf_fc, fc_shallow 1.1842635289256478e-27
+tf_fc, fc_gene 5.9342416790301e-19
+tf_shallow, tf_gene 3.1196245278888594e-08
+tf_shallow, shallow_fc 2.098633994450019e-25
+tf_shallow, shallow_shallow 0.04190222270146643
+tf_shallow, shallow_gene 4.449174262370918e-06
+tf_shallow, fc_fc 7.77311473545342e-26
+tf_shallow, fc_gene 9.764052777304526e-05
+tf_gene, shallow_fc 5.254361877874221e-27
+tf_gene, shallow_shallow 1.1339731562157488e-08
+tf_gene, fc_fc 1.3522838640988034e-27
+tf_gene, fc_shallow 1.5942512647085856e-10
+shallow_fc, shallow_shallow 1.258990579774197e-22
+shallow_fc, shallow_gene 2.6556731984006243e-25
+shallow_fc, fc_fc 7.470912985608399e-07
+shallow_fc, fc_shallow 1.7976429670901598e-28
+shallow_fc, fc_gene 3.81778174556914e-19
+shallow_shallow, shallow_gene 2.4217682836449437e-07
+shallow_shallow, fc_fc 5.696757817699197e-23
+shallow_shallow, fc_shallow 0.03774714148462649
+shallow_shallow, fc_gene 2.6036325930957134e-06
+shallow_gene, fc_fc 8.655010040097137e-26
+shallow_gene, fc_shallow 8.778963354969943e-08
+fc_fc, fc_shallow 4.752142963437007e-29
+fc_fc, fc_gene 1.5758926974970653e-19
+fc_shallow, fc_gene 2.498890012423568e-05

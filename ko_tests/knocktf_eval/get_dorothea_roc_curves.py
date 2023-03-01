@@ -151,8 +151,8 @@ def get_knowledge(knowledge_path,overlap_set):
         
 
 if __name__ == '__main__':
-    #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/TF_activities_dorothea'
-    activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/sample_tf_activities/'
+    activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/TF_activities_dorothea_relconn10/'
+    #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/sample_tf_activities/'
     obj = getROCCurve(activity_dir)
     """
     embedding_path = '/nobackup/users/schaferd/ae_project_outputs/vanilla/moa_tests_epochs100_batchsize256_edepth2_ddepth2_lr1e-05_lrsched_moa0.1_7-19_18.36.45/model_encoder_fold0.pth'

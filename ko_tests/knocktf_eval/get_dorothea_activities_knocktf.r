@@ -30,7 +30,7 @@ pkn_filtered <- pkn_filtered %>% select(-confidence)
 
 
 ### Run dorothea/viper for every file-----------------------------------------
-minNrOfGenes = 4
+minNrOfGenes = 10 
 settings = list(verbose = F, minsize = minNrOfGenes)
 for (file in files){
   gex <- data.table::fread(paste0('/nobackup/users/schaferd/ae_project_data/ko_data/ko_datafiles/',file),header = T) %>% column_to_rownames('Sample_ID')
