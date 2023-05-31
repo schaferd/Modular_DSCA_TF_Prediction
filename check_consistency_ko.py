@@ -34,7 +34,7 @@ def calculate_consistency(activity_dir):
     #with open(activity_dir+"/consistency_info.pkl", 'wb+') as f:
     #    pkl.dump(info_dict,f)
 
-    return distances
+    return rankings, distances
 
 
 def get_data_paths(activity_dir):

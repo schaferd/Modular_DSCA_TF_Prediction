@@ -18,13 +18,20 @@ decoders = ['d_shallow','d_gene','d_fc']
 print(decoders)
 print(encoders)
 
+PROPS = {
+    'boxprops':{'facecolor':'white', 'edgecolor':'gray'},
+    'medianprops':{'color':'gray'},
+    'whiskerprops':{'color':'gray'},
+    'capprops':{'color':'gray'}
+}
+
 decoder_name_dict = {'d_fc':'FC','d_shallow':'S','d_gene':'G'}
 
 for i, a in enumerate(ax[:3]):
     decoder_df =df[df['decoder']==decoders[i]]
     with sns.color_palette("Paired"):
-        sns.boxplot(x='encoder',y='distance',data=decoder_df,ax=a,  boxprops=dict(alpha=.3))
-        sns.swarmplot(data=decoder_df, x="encoder", y='distance',ax=a, edgecolor='k',linewidth=1)
+        sns.boxplot(x='encoder',y='distance',data=decoder_df,ax=a, boxprops=dict(alpha=.6))
+        #sns.swarmplot(data=decoder_df, x="encoder", y='distance',ax=a, edgecolor='k',linewidth=1)
     a.set_xticklabels(['S','T','FC'])
     if i == 0:
         a.set_ylabel('Kendall\'s W')
@@ -37,13 +44,13 @@ for i, a in enumerate(ax[:3]):
 
 a = ax[3]
 with sns.color_palette("Paired"):
-    sns.boxplot(data=random_distances, ax=a, boxprops=dict(alpha=0.3))
-    sns.swarmplot(data=random_distances,ax=a,edgecolor='k',linewidth=1)
+    sns.boxplot(data=random_distances, ax=a, **PROPS)#boxprops=dict(alpha=0.3))
+    #sns.swarmplot(data=random_distances,ax=a,edgecolor='k',linewidth=1)
     a.set_title("Random")
     a.get_xaxis().set_visible(False)
     
 
 fig.suptitle("Ranking Consistency Between Trained Models", fontsize='x-large',y=0.95)
-fig.savefig('const_boxplots.png', bbox_inches='tight')
+fig.savefig('const_boxplots.png', bbox_inches='tight',dpi=300)
     
 

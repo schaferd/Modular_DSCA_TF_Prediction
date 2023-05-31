@@ -5,6 +5,14 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 
+PROPS = {
+    #    'boxprops':{'alpha':0.6},
+    'boxprops':{'facecolor':'white', 'edgecolor':'gray'},
+    'medianprops':{'color':'gray'},
+    'whiskerprops':{'color':'gray'},
+    'capprops':{'color':'gray'}
+}
+
 base_path = '/nobackup/users/schaferd/ae_project_outputs/reg_tests/'
 
 fc_1_g_1 = base_path+'shallow_l2_fc-genefc_epochs50_batchsize128_enlr0.01_delr0.01_del20.1_enl20.1_moa1.0_rel_conn10_2-16_21.11.54/'
@@ -31,23 +39,30 @@ fig.set_figheight(4)
 plt.subplots_adjust(left=0.2,bottom=0.2,right=0.8,top=0.8,wspace=0.4,hspace=1.5)
 
 a = ax[0]
-a.errorbar(x_ticks,corr_data_mean,yerr=corr_data_std,ecolor='k',alpha=0.5,capsize=4)
-a.set_xscale('log')
+#a.errorbar(x_ticks,corr_data_mean,yerr=corr_data_std,ecolor='k',alpha=0.5,capsize=4)
+sns.boxplot(data=corr_data,ax=a,**PROPS)
+sns.swarmplot(data=corr_data,ax=a,edgecolor='gray',linewidth=1,alpha=0.8)
+#a.set_xscale('log')
 a.set_ylabel('Correlation')
+a.set_xticklabels(x_ticks)
 a.set_xlabel('L2 Constant')
 a.set_title('L2 Constant vs. \nReconstruction Correlation')
 
 
 a = ax[1]
-a.errorbar(x_ticks,auc_data_mean,yerr=auc_data_std,ecolor='k',alpha=0.5,capsize=4)
-a.set_xscale('log')
+#a.errorbar(x_ticks,auc_data_mean,yerr=auc_data_std,ecolor='k',alpha=0.5,capsize=4)
+#a.set_xscale('log')
+a.axhline(y=0.5, color='darkgrey', linestyle='--',zorder=0)
+sns.boxplot(data=auc_data,ax=a,**PROPS)
+sns.swarmplot(data=auc_data,ax=a,edgecolor='gray',linewidth=1,alpha=0.8)
 a.set_ylabel('AUC ROC')
 a.set_xlabel('L2 Constant')
+a.set_xticklabels(x_ticks)
 a.set_title('L2 Constant vs. \nTF Perturbation Evaluation')
 
 fig.suptitle('Shallow L2 Regularization Performance',fontsize='x-large')
 
-fig.savefig('shallow_l2_plots.png', bbox_inches='tight')
+fig.savefig('shallow_l2_plots.png', bbox_inches='tight',dpi=300)
 
 labels = []
 pvals = []

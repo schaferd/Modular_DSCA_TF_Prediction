@@ -10,6 +10,14 @@ from l2_data import l2_corr_errors, l2_auc_errors, l2_corr_mean, l2_auc_mean
 
 TITLE_Y = 1 
 
+PROPS = {
+    #    'boxprops':{'alpha':0.6},
+    'boxprops':{'facecolor':'white', 'edgecolor':'gray'},
+    'medianprops':{'color':'gray'},
+    'whiskerprops':{'color':'gray'},
+    'capprops':{'color':'gray'}
+}
+
 fig,ax = plt.subplots()
 subfigs = fig.subfigures(3,1)
 #plt.tight_layout()
@@ -23,10 +31,12 @@ axTop = subfigs[0].subplots(1,2)
 x = [0,0.00001,0.0001,0.001,0.01,0.1]
 
 a = axTop[0]
-a.set_xscale('log')
-a.errorbar(x,l2_corr_mean,yerr=l2_corr_errors,ecolor='k',alpha=0.5,capsize=4)
+#a.set_xscale('log')
+#a.errorbar(x,l2_corr_mean,yerr=l2_corr_errors,ecolor='k',alpha=0.5,capsize=4)
+sns.boxplot(x=x,data=l2_corr,ax=a,**PROPS)
+sns.swarmplot(x=x,data=l2_corr,ax=a,edgecolor='gray',linewidth=1,alpha=0.8)
 a.set_xlabel('L2 Constant')
-a.set_ylim(0, 0.7)
+#a.set_ylim(0, 0.7)
 a.set_ylabel('Correlation')
 a.set_title('L2 Constant vs. \nReconstruction Correlation', y=TITLE_Y)
 
@@ -78,6 +88,6 @@ a.axhline(y=0.5, color='r', linestyle='--',alpha=0.4)
 a.set_title('Dropout Rate vs. \nTF Knock Out Prediction',y=TITLE_Y)
 
 
-fig.suptitle('F-G Regularization Search',fontsize='x-large',y=0.95)
+fig.suptitle('FC-G Regularization Search',fontsize='x-large',y=0.95)
 
 fig.savefig('reg_plots.png', bbox_inches='tight')

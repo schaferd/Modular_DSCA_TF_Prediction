@@ -28,12 +28,23 @@ decoder_name_dict = {'d_fc':'FC','d_shallow':'S','d_gene':'G'}
 
 title_sub_space=0.97
 
+swarmplot_color = 'white'
+d_line_color = 'darkgrey'
+
+PROPS = {
+    #    'boxprops':{'alpha':0.6},
+    'boxprops':{'facecolor':'white', 'edgecolor':'gray'},
+    'medianprops':{'color':'gray'},
+    'whiskerprops':{'color':'gray'},
+    'capprops':{'color':'gray'}
+}
+
 axBottom = subfigs[1].subplots(1,3,sharey=True)
 for i, a in enumerate(axBottom):
     decoder_df = auc_df[auc_df['decoder']==decoders[i]]
     with sns.color_palette("Paired"):
-        sns.boxplot(x='encoder',y='AUC',data=decoder_df,ax=a, boxprops=dict(alpha=.3))
-        sns.swarmplot(data=decoder_df, x="encoder", y='AUC',ax=a, edgecolor='k',linewidth=1)
+        sns.boxplot(x='encoder',y='AUC',data=decoder_df,ax=a,**PROPS)
+        sns.swarmplot(data=decoder_df, x="encoder", y='AUC',ax=a,edgecolor='gray',linewidth=1,alpha=0.8)
     a.set_xticklabels(['S','T','FC'])
     a.set_ylim(0.45, 0.78)
     a.yaxis.get_major_ticks()[-1].set_visible(False)
@@ -44,15 +55,15 @@ for i, a in enumerate(axBottom):
         a.get_yaxis().set_visible(False)
     a.set_xlabel('Encoder Module')
     a.set_title(decoder_name_dict[decoders[i]] + ' Decoder')
-    a.axhline(y=0.5, color='r', linestyle='--',alpha=0.4)
+    a.axhline(y=0.5, color=d_line_color, linestyle='--')
 subfigs[1].suptitle("TF Perturbation Prediction",fontsize='x-large',y=title_sub_space)
 
 axTop = subfigs[0].subplots(1,3,sharey=True)
 for i, a in enumerate(axTop):
     decoder_df = corr_df[corr_df['decoder']==decoders[i]]
     with sns.color_palette("Paired"):
-        sns.boxplot(x='encoder',y='Corr',data=decoder_df,ax=a,  boxprops=dict(alpha=.3))
-        sns.swarmplot(data=decoder_df, x="encoder", y='Corr',ax=a, edgecolor='k',linewidth=1)
+        #sns.boxplot(x='encoder',y='Corr',data=decoder_df,ax=a,**PROPS)
+        sns.swarmplot(data=decoder_df, x="encoder", y='Corr',ax=a, edgecolor='gray',linewidth=1,alpha=0.8)
     a.set_xticklabels(['S','T','FC'])
     a.set_ylim(0, 1)
     if i == 0:
@@ -64,7 +75,7 @@ for i, a in enumerate(axTop):
     a.set_title(decoder_name_dict[decoders[i]] + ' Decoder')
 
 subfigs[0].suptitle("Reconstruction Correlation", fontsize='x-large',y=title_sub_space)
-fig.savefig('model_boxplots.png', bbox_inches='tight')
+fig.savefig('model_boxplots.png', bbox_inches='tight',dpi=300)
 
 plt.clf()
 df_auc = auc_df.sort_values(by=['encoder','decoder'],ascending=False)
@@ -77,7 +88,7 @@ fig, ax = plt.subplots()
 ax.scatter(df['Corr'],df['AUC'])
 ax.set_ylabel("ROC AUC")
 ax.set_xlabel("Correlation")
-fig.savefig("rocvscorr.png")
+fig.savefig("rocvscorr.png",dpi=300)
 
     
 
@@ -101,12 +112,24 @@ for i in range(len(p_adjusted)):
 pvals = []
 labels = []
 keys = list(corr_dict.keys())
+
+diff_decoder = []
+same_decoder = []
+
 for i,key in enumerate(keys):
     for j in keys[i+1:]:
         if key != j:
             stat, pval = ttest_ind(corr_dict[key],corr_dict[j])
             pvals.append(pval)
             labels.append(key+', '+j)
+            dec1 = key.split('_')[1]
+            dec2 = j.split('_')[1]
+            if dec1 == dec2:
+                same_decoder.append(pval)
+            else:
+                diff_decoder.append(pval)
+
+
 
 print("\nCORR MODEL PVALUES")
 p_adjusted = multipletests(pvals,alpha=0.05,method='bonferroni')[1]
@@ -114,3 +137,9 @@ for i in range(len(p_adjusted)):
     if p_adjusted[i] <0.05:
         print(labels[i],p_adjusted[i])
 
+p_adjusted = multipletests(diff_decoder+same_decoder,alpha=0.05,method='bonferroni')[1]
+same_decoder = p_adjusted[len(diff_decoder):]
+diff_decoder = p_adjusted[:len(diff_decoder)]
+
+print("diff decoder",np.mean(np.array(diff_decoder)))
+print("same decoder",np.mean(np.array(same_decoder)))

@@ -22,12 +22,10 @@ import shutil
 import pickle as pkl
 from data_class import CellTypeDataset
 from ae_model import AE
-from eval_funcs import get_correlation,get_ko_roc_curve, get_knocktf_ko_roc_curve, plot_ko_rank_vs_connections#, get_essentiality_roc_curve, get_blood_analysis
+from eval_funcs import get_correlation,get_ko_roc_curve, get_knocktf_ko_roc_curve#, plot_ko_rank_vs_connection
 from figures import plot_input_vs_output,create_test_vs_train_plot,create_corr_hist,create_moa_figs,TF_ko_heatmap
-from rnaseq_eval import RNASeqTFEval
 
 from data_processing import DataProcessing
-#from check_consistency_ko import Consistency
 
 
 #device = torch.device('cpu')
@@ -93,7 +91,7 @@ class Train():
         self.moa = self.param_dict["moa"]
 
         self.roc_data_path = self.param_dict["roc_data_path"]
-        self.rnaseq_tf_eval_path = self.param_dict["rnaseq_tf_eval_path"]
+        #self.rnaseq_tf_eval_path = self.param_dict["rnaseq_tf_eval_path"]
         #self.blood_data = self.param_dict["blood_data"]
         #self.blood_meta_data = self.param_dict["blood_meta_data"]
 
@@ -243,7 +241,7 @@ class Train():
 
         auc = 0
         if self.save_model:
-            torch.save(self.model.encoder,self.get_save_path()+'/fold'+str(fold_num)+'_cycle'+str(self.cycle)+"/model_encoder_cycle"+str(self.cycle)+"_fold"+str(fold_num)+".pth")
+            torch.save(self.model,self.get_save_path()+'/fold'+str(fold_num)+'_cycle'+str(self.cycle)+"/model_cycle"+str(self.cycle)+"_fold"+str(fold_num)+".pth")
             corr_file = open(self.get_save_path()+'/fold'+str(fold_num)+'_cycle'+str(self.cycle)+"/corr_cycle"+str(self.cycle)+"_fold"+str(fold_num),'w+')
             corr_file.write(str(correlation)+"\n")
             corr_file.write(str(corr_list))
@@ -265,10 +263,10 @@ class Train():
             auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
             self.aucs.append(auc)
             print("ko tf ranks",ko_tf_ranks)
-            auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
-            self.knocktf_aucs.append(auc)
-            print("knocktf ko tf ranks",ko_tf_ranks)
-            plot_ko_rank_vs_connections(self.data_obj,ko_tf_ranks,save_path,fold=fold_num,cycle=self.cycle)
+            #auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            #self.knocktf_aucs.append(auc)
+            #print("knocktf ko tf ranks",ko_tf_ranks)
+            #plot_ko_rank_vs_connections(self.data_obj,ko_tf_ranks,save_path,fold=fold_num,cycle=self.cycle)
             #get_blood_analysis(self.data_obj,self.blood_data,self.blood_meta_data,self.get_save_path(),self.trained_embedding_model,fold=fold_num,cycle=self.cycle)
             self.test_corrs.append(test_correlation)
             self.train_corrs.append(correlation)
@@ -570,8 +568,8 @@ class Train():
 
         with open(self.get_save_path()+'/aucs.pkl','wb+') as f:
             pkl.dump(self.aucs,f)
-        with open(self.get_save_path()+'/knocktf_aucs.pkl','wb+') as f:
-            pkl.dump(self.knocktf_aucs,f)
+        #with open(self.get_save_path()+'/knocktf_aucs.pkl','wb+') as f:
+        #    pkl.dump(self.knocktf_aucs,f)
         with open(self.get_save_path()+'/train_corrs.pkl','wb+') as f:
             pkl.dump(self.train_corrs,f)
         with open(self.get_save_path()+'/test_corrs.pkl','wb+') as f:
@@ -623,9 +621,6 @@ if __name__ == "__main__":
         parser.add_argument('--moa_subset',type=int,required=False,default=0,help='subset value for moa')
 
         parser.add_argument('--roc_data_path',type=str,required=True,help='path to roc data')
-        parser.add_argument('--rnaseq_tf_eval_path',type=str,required=True,help='path to tf rnaseq data')
-        parser.add_argument('--blood_data',type=str,required=True)
-        parser.add_argument('--blood_meta_data',type=str,required=True)
 
         parser.add_argument('--record',type=str,required=False,default=False,help="true if you want results to recorded in record table")
         parser.add_argument('--record_path',type=str,required=True,help="where you want to keep the record/where record is kept")
@@ -673,9 +668,9 @@ if __name__ == "__main__":
         moa = args.moa
 
         roc_data_path = args.roc_data_path
-        rnaseq_tf_eval_path = args.rnaseq_tf_eval_path
-        blood_data = args.blood_data
-        blood_meta_data = args.blood_meta_data
+        #rnaseq_tf_eval_path = args.rnaseq_tf_eval_path
+        #blood_data = args.blood_data
+        #blood_meta_data = args.blood_meta_data
 
         cycles = args.cycles
 
@@ -722,9 +717,9 @@ if __name__ == "__main__":
             "moa_beta":moa_beta,
 
             "roc_data_path":roc_data_path,
-            "rnaseq_tf_eval_path":rnaseq_tf_eval_path,
-            "blood_data":blood_data,
-            "blood_meta_data":blood_meta_data,
+            #"rnaseq_tf_eval_path":rnaseq_tf_eval_path,
+            #"blood_data":blood_data,
+            #"blood_meta_data":blood_meta_data,
 
             "record":record,
             "record_path":record_path,

@@ -13,21 +13,21 @@ l2_3 = base_path+'l2_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.
 l2_2 = base_path+'l2_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_2-12_14.31.34/'
 
 control_auc = pd.read_pickle(control+'aucs.pkl')
-l2_1_auc = [] #pd.read_pickle(l2_1+'aucs.pkl')
+#l2_1_auc = [] #pd.read_pickle(l2_1+'aucs.pkl')
 l2_2_auc = pd.read_pickle(l2_2+'aucs.pkl')
 l2_3_auc = pd.read_pickle(l2_3+'aucs.pkl')
 l2_4_auc = pd.read_pickle(l2_4_1+'aucs.pkl')+pd.read_pickle(l2_4_2+'aucs.pkl')
 l2_5_auc = pd.read_pickle(l2_5_1+'aucs.pkl')+pd.read_pickle(l2_5_2+'aucs.pkl')
 
 control_corr = pd.read_pickle(control+'test_corrs.pkl')
-l2_1_corr = [] #pd.read_pickle(l2_1+'test_corrs.pkl')
+#l2_1_corr = [] #pd.read_pickle(l2_1+'test_corrs.pkl')
 l2_2_corr = pd.read_pickle(l2_2+'test_corrs.pkl')
 l2_3_corr = pd.read_pickle(l2_3+'test_corrs.pkl')
 l2_4_corr = pd.read_pickle(l2_4_1+'test_corrs.pkl')+pd.read_pickle(l2_4_2+'test_corrs.pkl')
 l2_5_corr = pd.read_pickle(l2_5_1+'test_corrs.pkl')+pd.read_pickle(l2_5_2+'test_corrs.pkl')
 
-l2_corrs = [control_corr,l2_5_corr,l2_4_corr,l2_3_corr,l2_2_corr,l2_1_corr]
-l2_aucs = [control_auc,l2_5_auc, l2_4_auc,l2_3_auc,l2_2_auc,l2_1_auc]
+l2_corrs = [control_corr,l2_5_corr,l2_4_corr,l2_3_corr,l2_2_corr]
+l2_aucs = [control_auc,l2_5_auc, l2_4_auc,l2_3_auc,l2_2_auc]
 
 l2_corr_errors = []
 l2_auc_errors = []

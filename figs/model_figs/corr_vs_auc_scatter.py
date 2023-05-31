@@ -60,7 +60,7 @@ for j in range(len(ax)):
             a.set_title(col+' corr: '+str(round(pcorr[0],2)), y=title_space)
             a.axhline(y=0.5, color='r', linestyle='--',alpha=0.4)
             a.set_ylim([0.4,0.8])
-fig.savefig('auc_vs_corr.png')
+fig.savefig('auc_vs_corr.png',dpi=300)
 
 p_adjusted = multipletests(pvalues,alpha=0.05,method='bonferroni')[1]
 for i,pval in enumerate(p_adjusted):

@@ -26,6 +26,7 @@ sys.path.insert(1,knocktf_roc_path)
 from get_knocktf_roc_curves import getKnockTFROCCurve as knocktf_roc
 
 
+"""
 roc_path = os.path.join(os.path.dirname(__file__),'essentiality/')
 print(roc_path)
 sys.path.insert(1,roc_path)
@@ -34,6 +35,7 @@ from get_roc_curves import getROCCurve as eROC
 comp_path = os.path.join(os.path.dirname(__file__),'comp_dorothea/')
 sys.path.append(comp_path)
 from get_comp import getComp
+"""
 
 is_gpu = False
 if torch.cuda.is_available():
@@ -142,6 +144,9 @@ def get_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
     obj = getROCCurve(ae_args=ae_args)
     return obj.auc, obj.diff_activities, obj.scaled_rankings, obj.ko_tf_ranks
 
+
+
+
 def get_knocktf_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
     tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}
     print("GETTING KO ROC CURVE")
@@ -159,8 +164,10 @@ def get_knocktf_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cyc
         'cycle':cycle
     }
     obj = knocktf_roc(ae_args=ae_args)
+
     return obj.auc, obj.diff_activities, obj.scaled_rankings, obj.ko_tf_ranks
 
+"""
 def plot_ko_rank_vs_connections(data_obj,ko_tf_rankings,save_path,fold=0,cycle=0):
     relationships = [len(data_obj.tf_gene_dict[tf]) for tf in ko_tf_rankings['regulon']]
     print("rela",relationships)
@@ -172,7 +179,6 @@ def plot_ko_rank_vs_connections(data_obj,ko_tf_rankings,save_path,fold=0,cycle=0
     plt.title('ko tf rank vs. tf-gene relationships, fold: '+str(fold)+' cycle: '+str(cycle))
     plt.savefig(save_path+'/ko_rank_vs_rel_fold'+str(fold)+'_cycle'+str(cycle)+'.png')
 
-"""
 def get_essentiality_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
     tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}
     ae_args = {

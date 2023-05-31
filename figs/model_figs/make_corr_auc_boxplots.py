@@ -130,7 +130,7 @@ ax[1,2].set_xlabel('Decoder Module')
 ax[1,2].set_ylabel('')
 ax[1,2].set_title('Decoder Module vs. Test Correlation')
 ax[1,2].set_xticklabels(['Shallow','G','FC'])
-fig.savefig('model_boxplots.png')
+fig.savefig('model_boxplots.png',dpi=300)
 
 print()
 print("CORR DECODER PVALUES")

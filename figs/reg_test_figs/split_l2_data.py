@@ -22,7 +22,9 @@ fc_4_g_5_5 = base_path+'split_l2_fc-genefc_epochs100_batchsize128_enlr0.0001_del
 fc_4_g_5 = base_path+'split_l2_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del21e-05_enl20.0001_moa1.0_rel_conn10_2-13_21.0.40/'
 
 fc_5_g_3 = base_path+'split_l2_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.001_enl21e-05_moa1.0_rel_conn10_2-13_20.23.31/'
+fc_5_g_5_4 = base_path+'l2_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0005_enl21e-05_moa1.0_rel_conn10_3-5_12.11.17/'
 fc_5_g_4 = base_path+'split_l2_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl21e-05_moa1.0_rel_conn10_2-13_20.23.31/'
+fc_5_g_5_5 = base_path+'l2_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del25e-05_enl21e-05_moa1.0_rel_conn10_3-5_12.11.17/'
 fc_5_g_5 = base_path+'l2_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del21e-05_enl21e-05_moa1.0_rel_conn10_2-12_11.31.31/'
 
 
@@ -34,7 +36,7 @@ fc_5_4_auc = [pd.read_pickle(fc_5_4_g_3+filename),pd.read_pickle(fc_5_4_g_5_4+fi
 fc_5_4_auc.reverse()
 fc_4_auc= [pd.read_pickle(fc_4_g_3+filename),pd.read_pickle(fc_4_g_5_4+filename),pd.read_pickle(fc_4_g_4+filename),pd.read_pickle(fc_3_g_5_5+filename),pd.read_pickle(fc_4_g_5+filename)]
 fc_4_auc.reverse()
-fc_5_auc = [pd.read_pickle(fc_5_g_3+filename),pd.read_pickle(fc_5_g_4+filename),pd.read_pickle(fc_5_g_5+filename)]
+fc_5_auc = [pd.read_pickle(fc_5_g_3+filename),pd.read_pickle(fc_5_g_5_4+filename),pd.read_pickle(fc_5_g_4+filename),pd.read_pickle(fc_5_g_5_5+filename),pd.read_pickle(fc_5_g_5+filename)]
 fc_5_auc.reverse()
 
 filename = 'test_corrs.pkl'
@@ -45,7 +47,7 @@ fc_5_4_corr = [pd.read_pickle(fc_5_4_g_3+filename),pd.read_pickle(fc_5_4_g_5_4+f
 fc_5_4_corr.reverse()
 fc_4_corr = [pd.read_pickle(fc_4_g_3+filename),pd.read_pickle(fc_4_g_5_4+filename),pd.read_pickle(fc_4_g_4+filename),pd.read_pickle(fc_3_g_5_5+filename),pd.read_pickle(fc_4_g_5+filename)]
 fc_4_corr.reverse()
-fc_5_corr = [pd.read_pickle(fc_5_g_3+filename),pd.read_pickle(fc_5_g_4+filename),pd.read_pickle(fc_5_g_5+filename)]
+fc_5_corr = [pd.read_pickle(fc_5_g_3+filename),pd.read_pickle(fc_5_g_5_4+filename),pd.read_pickle(fc_5_g_4+filename),pd.read_pickle(fc_5_g_5_5+filename),pd.read_pickle(fc_5_g_5+filename)]
 fc_5_corr.reverse()
 
 l2_corrs = [fc_5_corr,fc_4_corr,fc_5_4_corr,fc_3_corr]
