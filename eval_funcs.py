@@ -7,8 +7,6 @@ import numpy as np
 import time
 import os
 
-#from blood_analysis import BloodAnalysis
-
 is_gpu = False
 if torch.cuda.is_available():
     device = torch.device('cuda:0')
@@ -25,17 +23,6 @@ print(knocktf_roc_path)
 sys.path.insert(1,knocktf_roc_path)
 from get_knocktf_roc_curves import getKnockTFROCCurve as knocktf_roc
 
-
-"""
-roc_path = os.path.join(os.path.dirname(__file__),'essentiality/')
-print(roc_path)
-sys.path.insert(1,roc_path)
-from get_roc_curves import getROCCurve as eROC
-
-comp_path = os.path.join(os.path.dirname(__file__),'comp_dorothea/')
-sys.path.append(comp_path)
-from get_comp import getComp
-"""
 
 is_gpu = False
 if torch.cuda.is_available():
@@ -166,66 +153,6 @@ def get_knocktf_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cyc
     obj = knocktf_roc(ae_args=ae_args)
 
     return obj.auc, obj.diff_activities, obj.scaled_rankings, obj.ko_tf_ranks
-
-"""
-def plot_ko_rank_vs_connections(data_obj,ko_tf_rankings,save_path,fold=0,cycle=0):
-    relationships = [len(data_obj.tf_gene_dict[tf]) for tf in ko_tf_rankings['regulon']]
-    print("rela",relationships)
-    print("scaled rankings",ko_tf_rankings["scaled ranking"])
-    plt.clf()
-    plt.scatter(relationships,ko_tf_rankings["scaled ranking"])
-    plt.ylabel('scaled ranking')
-    plt.xlabel('number of gene relationships to ko tf')
-    plt.title('ko tf rank vs. tf-gene relationships, fold: '+str(fold)+' cycle: '+str(cycle))
-    plt.savefig(save_path+'/ko_rank_vs_rel_fold'+str(fold)+'_cycle'+str(cycle)+'.png')
-
-def get_essentiality_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
-    tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}
-    ae_args = {
-        'embedding':encoder,
-        'overlap_genes': data_obj.overlap_list,
-        'knowledge':tf_gene_dict,
-        'data_dir':roc_data_path,
-        'ae_input_genes':data_obj.input_genes,
-        'tf_list':data_obj.tfs,
-        'out_dir':save_path,
-        'fold':fold,
-        'cycle':cycle
-    }
-    obj = eROC(ae_args=ae_args)
-    return obj.auc, obj.diff_activities, obj.scaled_rankings
-
-def comp_dorothea(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
-    tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}
-    ae_args = {
-        'embedding':encoder,
-        'overlap_genes': data_obj.overlap_list,
-        'knowledge':tf_gene_dict,
-        'data_dir':roc_data_path,
-        'ae_input_genes':data_obj.input_genes,
-        'tf_list':data_obj.tfs,
-        'out_dir':save_path,
-        'fold':fold,
-        'cycle':cycle
-    }
-    obj = getComp(ae_args=ae_args)
-    return obj
-"""
-
-def get_blood_analysis(data_obj, blood_data_path, celltype_path, save_path, encoder,fold=0,cycle=0):
-    ae_args = {
-        'encoder':encoder,
-        'overlap_genes': data_obj.overlap_list,
-        'celltype_path':celltype_path,
-        'data_path':blood_data_path,
-        'ae_input_genes':data_obj.input_genes,
-        'tf_list':data_obj.tfs,
-        'out_dir':save_path,
-        'fold':fold,
-        'cycle':cycle
-    }
-    obj = BloodAnalysis(ae_args=ae_args)
-
 
 
 

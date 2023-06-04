@@ -28,7 +28,7 @@ from figures import plot_input_vs_output,create_test_vs_train_plot,create_corr_h
 from data_processing import DataProcessing
 
 
-#device = torch.device('cpu')
+device = torch.device('cpu')
 is_gpu = False
 if torch.cuda.is_available():
     device = torch.device('cuda:0')
@@ -91,9 +91,7 @@ class Train():
         self.moa = self.param_dict["moa"]
 
         self.roc_data_path = self.param_dict["roc_data_path"]
-        #self.rnaseq_tf_eval_path = self.param_dict["rnaseq_tf_eval_path"]
-        #self.blood_data = self.param_dict["blood_data"]
-        #self.blood_meta_data = self.param_dict["blood_meta_data"]
+        self.final_eval = self.param_dict["final_eval"]
 
         self.data_obj = DataProcessing(self.input_path,self.sparse_path,self.batch_size,self.relationships_filter)
         self.MOA = MOA(self.data_obj,self.moa,self.moa_subset,self.moa_beta)
@@ -263,11 +261,10 @@ class Train():
             auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
             self.aucs.append(auc)
             print("ko tf ranks",ko_tf_ranks)
-            #auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
-            #self.knocktf_aucs.append(auc)
-            #print("knocktf ko tf ranks",ko_tf_ranks)
-            #plot_ko_rank_vs_connections(self.data_obj,ko_tf_ranks,save_path,fold=fold_num,cycle=self.cycle)
-            #get_blood_analysis(self.data_obj,self.blood_data,self.blood_meta_data,self.get_save_path(),self.trained_embedding_model,fold=fold_num,cycle=self.cycle)
+            if self.final_eval:
+                auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+                self.knocktf_aucs.append(auc)
+                print("knocktf ko tf ranks",ko_tf_ranks)
             self.test_corrs.append(test_correlation)
             self.train_corrs.append(correlation)
 
@@ -558,9 +555,6 @@ class Train():
                     train_loss,test_loss, corr,test_corr,auc = self.get_trained_model(train_loader,test_loader,fold)
                     loss_list.append(test_loss)
                     corr_list.append(corr)
-                    #rnaseq_eval = RNASeqTFEval(self.rnaseq_tf_eval_path,train_data,test_data,self.model.encoder,self.data_obj.tfs,self.sparse_path,self.get_save_path())
-                    #self.tf_rnaseq_auc.append(rnaseq_eval.auc)
-                    #self.tf_rnaseq_corr.append(rnaseq_eval.corr)
 
                     if self.record:
                         self.add_to_record(auc,train_loss,test_loss,corr,test_corr,rnaseq_eval.auc,rnaseq_eval.corr)
@@ -568,8 +562,9 @@ class Train():
 
         with open(self.get_save_path()+'/aucs.pkl','wb+') as f:
             pkl.dump(self.aucs,f)
-        #with open(self.get_save_path()+'/knocktf_aucs.pkl','wb+') as f:
-        #    pkl.dump(self.knocktf_aucs,f)
+        if self.final_eval:
+            with open(self.get_save_path()+'/knocktf_aucs.pkl','wb+') as f:
+                pkl.dump(self.knocktf_aucs,f)
         with open(self.get_save_path()+'/train_corrs.pkl','wb+') as f:
             pkl.dump(self.train_corrs,f)
         with open(self.get_save_path()+'/test_corrs.pkl','wb+') as f:
@@ -591,6 +586,7 @@ if __name__ == "__main__":
 
         parser.add_argument('--save_figs',type=str,required=False,default=False,help='set to True if you want figures from training/testing to be saved')
         parser.add_argument('--save_path',type=str,required=False,default="figures/",help='directory where you want error data and figures to saved')
+        parser.add_argument('--final_eval',type=str,required=False,default=False,help='true if you want final eval to be performed')
         parser.add_argument('--fig_freq',type=int,required=False,default=10,help='how often do you want figures on epochs (ie. every 10 epochs)')
         parser.add_argument('--model_type',type=str,required=False,default='ae',help='describe model')
         parser.add_argument('--en_l2',type=float,required=False,default=0,help='value for l2 regularization')
@@ -668,9 +664,7 @@ if __name__ == "__main__":
         moa = args.moa
 
         roc_data_path = args.roc_data_path
-        #rnaseq_tf_eval_path = args.rnaseq_tf_eval_path
-        #blood_data = args.blood_data
-        #blood_meta_data = args.blood_meta_data
+        final_eval = args.final_eval
 
         cycles = args.cycles
 
@@ -689,7 +683,6 @@ if __name__ == "__main__":
             "encoder_depth":encoder_depth,
             "decoder_depth":decoder_depth,
 
-            #"lr":lr,
             "en_lr":en_lr,
             "de_lr":de_lr,
             "en_lr_sched":en_lr_sched,
@@ -717,9 +710,7 @@ if __name__ == "__main__":
             "moa_beta":moa_beta,
 
             "roc_data_path":roc_data_path,
-            #"rnaseq_tf_eval_path":rnaseq_tf_eval_path,
-            #"blood_data":blood_data,
-            #"blood_meta_data":blood_meta_data,
+            "final_eval":final_eval,
 
             "record":record,
             "record_path":record_path,

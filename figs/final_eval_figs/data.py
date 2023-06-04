@@ -29,7 +29,7 @@ random_const = make_random_ranks(deep1)
 deep_const = calculate_consistency(deep1)[1]+calculate_consistency(deep2)[1]
 shallow_const = calculate_consistency(shallow1)[1]+calculate_consistency(shallow2)[1]
 
-dorothea_pert = 0.68
+dorothea_pert = 0.66
 dorothea_knocktf=0.56
 title_sub_space = 1.02
 swarmplot_color = 'lightsteelblue'
@@ -45,49 +45,54 @@ PROPS = {
 #print(deep_pert)
 #print(deep_knocktf)
 
+"""
 fig,ax = plt.subplots(1,3)
 fig.set_figwidth(14)
 fig.set_figheight(6)
 plt.subplots_adjust(left=0.1,bottom=0.2,right=0.9,top=0.8,wspace=0.35,hspace=0)
+"""
 
+def final_auc(fig):
+    fig.subplots_adjust(left=0.1,bottom=0.2,right=0.9,top=0.8,wspace=0.35,hspace=0)
+    ax = fig.subplots(1,2)
+    a = ax[0]
+    x_ticks = ["S-S","FC-G","VIPER"]
+    with sns.color_palette("Paired"):
+        sns.boxplot(data=[shallow_pert,deep_pert],ax=a,showfliers=False,**PROPS)
+        sns.swarmplot(data=[shallow_pert,deep_pert,[dorothea_pert]],ax=a,color=swarmplot_color, edgecolor='k',linewidth=1)
+    a.set_xticklabels(x_ticks)
+    a.set_title("Perturbation Validation", fontsize='x-large',y=title_sub_space)
+    a.axhline(y=dorothea_pert, color=d_line_color, linestyle='--',zorder=0)
+    a.set_xlabel("Method")
+    a.set_ylabel("ROC AUC")
+    a.set_ylim(0.5,0.8)
 
-a = ax[0]
-x_ticks = ["S-S","FC-G","VIPER"]
-with sns.color_palette("Paired"):
-    sns.boxplot(data=[shallow_pert,deep_pert],ax=a,showfliers=False,**PROPS)
-    sns.swarmplot(data=[shallow_pert,deep_pert,[dorothea_pert]],ax=a,color=swarmplot_color, edgecolor='k',linewidth=1)
-a.set_xticklabels(x_ticks)
-a.set_title("Perturbation Validation", fontsize='x-large',y=title_sub_space)
-a.axhline(y=dorothea_pert, color=d_line_color, linestyle='--',zorder=0)
-a.set_xlabel("Method")
-a.set_ylabel("ROC AUC")
-a.set_ylim(0.5,0.8)
+    a = ax[1]
+    x_ticks = ["S-S","FC-G","VIPER"]
+    with sns.color_palette("Paired"):
+        sns.boxplot(data=[shallow_knocktf,deep_knocktf],ax=a,showfliers=False,**PROPS)
+        sns.swarmplot(data=[shallow_knocktf,deep_knocktf,[dorothea_knocktf]],ax=a, color=swarmplot_color,edgecolor='k',linewidth=1)
+    a.set_xticklabels(x_ticks)
+    a.set_title("Knock-out Validation", fontsize='x-large',y=title_sub_space)
+    a.axhline(y=dorothea_knocktf, color=d_line_color, linestyle='--',zorder=0)
+    a.set_xlabel("Method")
+    a.set_ylabel("ROC AUC")
+    a.set_ylim(0.5,0.8)
 
-a = ax[1]
-x_ticks = ["S-S","FC-G","VIPER"]
-with sns.color_palette("Paired"):
-    sns.boxplot(data=[shallow_knocktf,deep_knocktf],ax=a,showfliers=False,**PROPS)
-    sns.swarmplot(data=[shallow_knocktf,deep_knocktf,[dorothea_knocktf]],ax=a, color=swarmplot_color,edgecolor='k',linewidth=1)
-a.set_xticklabels(x_ticks)
-a.set_title("Knock-out Validation", fontsize='x-large',y=title_sub_space)
-a.axhline(y=dorothea_knocktf, color=d_line_color, linestyle='--',zorder=0)
-a.set_xlabel("Method")
-a.set_ylabel("ROC AUC")
-a.set_ylim(0.5,0.8)
-
-
-a = ax[2]
-x_ticks = ["S-S","FC-G","Random"]
-print('random',random_const)
-print('deep',deep_const)
-with sns.color_palette("Paired"):
-    sns.boxplot(data=[shallow_const,deep_const,random_const],ax=a,showfliers=True,**PROPS)
-    #sns.swarmplot(data=[shallow_const,deep_const,random_const],ax=a, edgecolor='k',linewidth=1)
-a.set_xticklabels(x_ticks)
-a.set_title("Consistency", fontsize='x-large',y=title_sub_space)
-a.set_xlabel("Method")
-a.set_ylabel("Kendall's W")
-a.set_ylim(-1,1)
+def final_const(a):
+    #fig.subplots_adjust(left=0.1,bottom=0.2,right=0.9,top=0.8,wspace=0.35,hspace=0)
+    #a = fig.subplots()
+    x_ticks = ["S-S","FC-G","Random"]
+    print('random',random_const)
+    print('deep',deep_const)
+    with sns.color_palette("Paired"):
+        sns.boxplot(data=[shallow_const,deep_const,random_const],ax=a,showfliers=True,**PROPS)
+        #sns.swarmplot(data=[shallow_const,deep_const,random_const],ax=a, edgecolor='k',linewidth=1)
+    a.set_xticklabels(x_ticks)
+    a.set_title("Consistency", fontsize='x-large',y=title_sub_space)
+    a.set_xlabel("Method")
+    a.set_ylabel("Kendall's W")
+    a.set_ylim(-1,1)
 
 """
 #CORRELATION BETWEEN EVAL AND FINAL EVAL 
@@ -103,7 +108,7 @@ a.set_xlim(0.5,0.8)
 a.set_title("pert vs. knocktf auc, corr: "+str(round(corr,2)))
 """
 
-fig.savefig("finaleval.png",dpi=300)
+#fig.savefig("finaleval.png",dpi=300)
 
 pvalues = []
 labels = []

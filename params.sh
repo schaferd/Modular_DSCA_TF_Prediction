@@ -4,20 +4,20 @@ export MODEL_TYPE='save_model' # name for model
 export EPOCHS=100 #how many epochs will be created
 export FIG_FREQ=100 # how often figures will get generated
 
-export SAVE_MODEL=False # true if model saves
+export SAVE_MODEL=True # true if model saves
 export SAVE_FIGS=True # true if model saves figures
+export FINAL_EVAL=False # true if want to perform final eval
 export RECORD=False
-export CHECK_CONSISTENCY=false
 
 #########ENCODER#########
 export FULLY_CONNECTED_ENCODER=false
-export TF_GROUPED_FC_INDEP_ENCODER=true
-export SHALLOW_ENCODER=false
+export TF_GROUPED_FC_INDEP_ENCODER=false
+export SHALLOW_ENCODER=true
 
 #########DECODER#########
 export FULLY_CONNECTED_DECODER=false
-export GENE_GROUPED_FC_INDEP_DECODER=true
-export SHALLOW_DECODER=false
+export GENE_GROUPED_FC_INDEP_DECODER=false
+export SHALLOW_DECODER=true
 
 
 export SPLITS=5 # how many splits you want for cross validation
@@ -36,13 +36,13 @@ export MOA=1 # constant for MOA
 export WARM_RESTART=0 # how many times you want to restart settings
 
 export BATCH_SIZE=128 # number of training examples used in one iteration
-export WIDTH_MULTIPLIER=1 #input_size*width_multiplier for width inner network
+export WIDTH_MULTIPLIER=1 #input_size*width_multiplier for width of hidden layers
 export RELATIONSHIPS_FILTER=10
 
 export ENCODER_DEPTH=2
 export DECODER_DEPTH=2
 
-export EN_LEARNING_RATE=0.001 # learning rate
+export EN_LEARNING_RATE=0.01 # learning rate
 export DE_LEARNING_RATE=0.01 # learning rate
 
 export EN_LR_SCHED=false # true if want learning rate to be scheduled
@@ -55,11 +55,11 @@ export SPARSE_DATA_PATH=/nobackup/users/schaferd/ae_project_data/dorothea_tf_gen
 #export SPARSE_DATA_PATH=/nobackup/users/schaferd/ae_project_data/gene_set_enrichment_analysis/gene_set.tsv
 INPUT_DATA_TYPE="hdf_agg_data" #poss types: roc_agg_data, hdf_agg_data, pos_df, neg_df, pos_neg_df, blood_data
 export INPUT_DATA=/home/schaferd/ae_project/input_data_processing/${INPUT_DATA_TYPE}.pkl
-export TF_RNASEQ_DATA=/home/schaferd/ae_project/input_data_processing/tf_agg_data.pkl
+#export TF_RNASEQ_DATA=/home/schaferd/ae_project/input_data_processing/tf_agg_data.pkl
 #export ROC_DATA_PATH="/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/contrasts/"
 export ROC_DATA_PATH="/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/"
-export BLOOD_META_DATA="/nobackup/users/schaferd/blood_analysis_data/SCP43/metadata/metadata.txt"
-export BLOOD_DATA="/nobackup/users/schaferd/blood_analysis_data/SCP43/expression/expression_matrix_tpm.txt"
+#export BLOOD_META_DATA="/nobackup/users/schaferd/blood_analysis_data/SCP43/metadata/metadata.txt"
+#export BLOOD_DATA="/nobackup/users/schaferd/blood_analysis_data/SCP43/expression/expression_matrix_tpm.txt"
 
 export curr_path=$(pwd)
 

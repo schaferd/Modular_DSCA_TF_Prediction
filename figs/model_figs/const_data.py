@@ -13,17 +13,17 @@ from check_consistency_ko import calculate_consistency, make_random_ranks
 
 base_path = "/nobackup/users/schaferd/ae_project_outputs/model_eval//"
 
-tf_fc = base_path+"/save_model_tffc-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_5-30_17.53.35/"
-tf_shallow = base_path+"/save_model_tffc-shallow_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_5-30_21.13.35/"
-tf_gene = base_path+"/save_model_tffc-genefc_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_5-30_21.13.36/"
+tf_fc = base_path+"/save_model_tffc-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_5-31_17.54.10/"
+tf_shallow = base_path+"/save_model_tffc-shallow_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_6-1_10.41.11/"
+tf_gene = base_path+"/save_model_tffc-genefc_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_5-31_23.34.32/"
 
-shallow_fc = base_path+"/save_model_shallow-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_5-31_9.18.27/"
-shallow_shallow = base_path+"/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_5-31_9.19.38/"
-shallow_gene = base_path+"/save_model_shallow-genefc_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_5-31_9.19.33/"
+shallow_fc = base_path+"/save_model_shallow-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_6-1_10.42.8/"
+shallow_shallow = base_path+"/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_6-1_10.43.21/"
+shallow_gene = base_path+"/save_model_shallow-genefc_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_6-1_10.42.44/"
 
-fc_fc= base_path+"/save_model_fc-fc_epochs100_batchsize128_enlr0.0001_delr0.0001_moa1.0_rel_conn10_5-30_17.51.19/"
-fc_shallow = base_path+"/save_model_fc-shallow_epochs100_batchsize128_enlr0.0001_delr0.001_moa1.0_rel_conn10_5-30_17.52.55/"
-fc_gene = base_path+"/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_5-30_17.52.56/"
+fc_fc= base_path+"/save_model_fc-fc_epochs100_batchsize128_enlr0.0001_delr0.0001_moa1.0_rel_conn10_5-31_17.51.41/"
+fc_shallow = base_path+"/save_model_fc-shallow_epochs100_batchsize128_enlr0.0001_delr0.001_moa1.0_rel_conn10_5-31_17.52.35/"
+fc_gene = base_path+"/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_5-31_17.52.2/"
 
 random_distances = make_random_ranks(fc_fc)
 

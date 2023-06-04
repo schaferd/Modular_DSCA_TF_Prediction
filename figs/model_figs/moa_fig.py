@@ -18,10 +18,12 @@ moa_corr = pd.read_pickle(moa_dir+'test_corrs.pkl')
 no_moa_corr = pd.read_pickle(no_moa_dir+'test_corrs.pkl')
 
 
+"""
 fig,ax = plt.subplots(1,2)
 plt.subplots_adjust(left=0.2,bottom=0.2,right=0.8,top=0.8,wspace=0.4,hspace=2)
 fig.set_figwidth(8)
 fig.set_figheight(4)
+"""
 
 """
 SMALL_SIZE = 14 
@@ -45,34 +47,38 @@ PROPS = {
     'capprops':{'color':'gray'}
 }
 
-#CORRELATION
-a = ax[0]
-with sns.color_palette("Paired"):
-    sns.boxplot(data=corr_data,ax=a,showfliers=False,**PROPS)
-    sns.swarmplot(data=corr_data,ax=a, edgecolor='k',linewidth=1)
-    a.set_xticklabels(["No MOA","MOA"])
-    a.set_ylim(0,1)
-    a.set_ylabel("Correlation")
-    a.set_title('Reconstruction Correlation',y=1.01)
+def create_moa_fig(fig,label_font_size,title_font_size, subtitle_font_size):
+    ax = fig.subplots(1,2)
+    fig.subplots_adjust(left=0.2,bottom=0.2,right=0.8,top=0.8,wspace=0.5,hspace=0.2)
+    #CORRELATION
+    print(ax)
+    a = ax[0]
+    with sns.color_palette("Paired"):
+        sns.boxplot(data=corr_data,ax=a,showfliers=False,**PROPS)
+        sns.swarmplot(data=corr_data,ax=a, edgecolor='k',linewidth=1)
+        a.set_xticklabels(["No MOA","MOA"])
+        a.set_ylim(0,1)
+        a.set_ylabel("Correlation")
+        a.set_title('Reconstruction Correlation',y=1.05)
 
 
-#AUC
-a = ax[1]
-with sns.color_palette("Paired"):
-    sns.boxplot(data=auc_data,ax=a,showfliers=False,**PROPS)
-    sns.swarmplot(data=auc_data,ax=a,edgecolor='k',linewidth=1)
-    a.set_xticklabels(["No MOA","MOA"])
-    a.set_ylabel("ROC AUC")
-    a.axhline(y=0.5, color='darkgrey', linestyle='--',alpha=0.4)
-    a.set_ylim(0.4,0.8)
-    a.set_title('TF Knockout Prediction',y=1.01)
+    #AUC
+    a = ax[1]
+    with sns.color_palette("Paired"):
+        sns.boxplot(data=auc_data,ax=a,showfliers=False,**PROPS)
+        sns.swarmplot(data=auc_data,ax=a,edgecolor='k',linewidth=1)
+        a.set_xticklabels(["No MOA","MOA"])
+        a.set_ylabel("ROC AUC")
+        a.axhline(y=0.5, color='darkgrey', linestyle='--')
+        a.set_ylim(0.4,0.8)
+        a.set_title('TF Knockout Prediction',y=1.05)
 
-fig.suptitle('F-G MOA vs. No MOA Performance', fontsize='x-large',y=0.93)
-fig.savefig('moa_boxplots.png', bbox_inches='tight',dpi=300)
+    fig.suptitle('FC-G MOA vs. No MOA Performance', fontsize='x-large',y=0.99)
+#fig.savefig('moa_boxplots.png', bbox_inches='tight',dpi=300)
 
-plt.clf()
+#plt.clf()
 
-fig,ax = plt.subplots(1,2)
+#fig,ax = plt.subplots(1,2)
 
 
 stat, pval = ttest_ind(moa_auc,no_moa_auc)
