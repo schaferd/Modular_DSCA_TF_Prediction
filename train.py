@@ -90,7 +90,7 @@ class Train():
         self.moa_subset = self.param_dict["moa_subset"]
         self.moa = self.param_dict["moa"]
 
-        self.roc_data_path = self.param_dict["roc_data_path"]
+        self.ko_data_path = self.param_dict["ko_data_path"]
         self.final_eval = self.param_dict["final_eval"]
 
         self.data_obj = DataProcessing(self.input_path,self.sparse_path,self.batch_size,self.relationships_filter)
@@ -239,7 +239,7 @@ class Train():
 
         auc = 0
         if self.save_model:
-            torch.save(self.model,self.get_save_path()+'/fold'+str(fold_num)+'_cycle'+str(self.cycle)+"/model_cycle"+str(self.cycle)+"_fold"+str(fold_num)+".pth")
+            torch.save(self.model.state_dict(),self.get_save_path()+'/fold'+str(fold_num)+'_cycle'+str(self.cycle)+"/model_cycle"+str(self.cycle)+"_fold"+str(fold_num)+".pth")
             corr_file = open(self.get_save_path()+'/fold'+str(fold_num)+'_cycle'+str(self.cycle)+"/corr_cycle"+str(self.cycle)+"_fold"+str(fold_num),'w+')
             corr_file.write(str(correlation)+"\n")
             corr_file.write(str(corr_list))
@@ -258,11 +258,11 @@ class Train():
             self.ko_activity_dirs.append(ko_activity_dir)
             if not os.path.exists(ko_activity_dir):
                 os.makedirs(ko_activity_dir)
-            auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,self.ko_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
             self.aucs.append(auc)
             print("ko tf ranks",ko_tf_ranks)
             if self.final_eval:
-                auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,self.roc_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+                auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,self.ko_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
                 self.knocktf_aucs.append(auc)
                 print("knocktf ko tf ranks",ko_tf_ranks)
             self.test_corrs.append(test_correlation)
@@ -616,7 +616,7 @@ if __name__ == "__main__":
         parser.add_argument('--moa_beta',type=float,required=False,default=0.9,help='beta value for moa')
         parser.add_argument('--moa_subset',type=int,required=False,default=0,help='subset value for moa')
 
-        parser.add_argument('--roc_data_path',type=str,required=True,help='path to roc data')
+        parser.add_argument('--ko_data_path',type=str,required=True,help='path to roc data')
 
         parser.add_argument('--record',type=str,required=False,default=False,help="true if you want results to recorded in record table")
         parser.add_argument('--record_path',type=str,required=True,help="where you want to keep the record/where record is kept")
@@ -663,7 +663,7 @@ if __name__ == "__main__":
         moa_beta = args.moa_beta
         moa = args.moa
 
-        roc_data_path = args.roc_data_path
+        ko_data_path = args.ko_data_path
         final_eval = args.final_eval
 
         cycles = args.cycles
@@ -709,7 +709,7 @@ if __name__ == "__main__":
             "moa_subset":moa_subset,
             "moa_beta":moa_beta,
 
-            "roc_data_path":roc_data_path,
+            "ko_data_path":ko_data_path,
             "final_eval":final_eval,
 
             "record":record,
@@ -719,11 +719,3 @@ if __name__ == "__main__":
         train = Train(hyper_params)
 
         train.cross_validation(k)
-        #c = Consistency(train.get_save_path(),train.ko_activity_dirs)
-        #c.plot_cv()
-        #cv = c.encoder_dist()
-        #c.plot_dist()
-
-
-
-

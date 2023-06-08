@@ -49,7 +49,21 @@ for i in range(len(l2_aucs)):
         pvals.append(pval)
         labels.append(str(x[i])+', '+str(x[j]))
 
+corr_labels = []
+corr_pvals = []
+for i in range(len(l2_corrs)):
+    for j in range(i+1,len(l2_corrs)):
+        stat,pval = ttest_ind(l2_corrs[i],l2_corrs[j])
+        corr_pvals.append(pval)
+        corr_labels.append(str(x[i])+', '+str(x[j]))
+
 p_adjusted = multipletests(pvals,alpha=0.05,method='bonferroni')[1]
+corr_p_adjusted = multipletests(corr_pvals,alpha=0.05,method='bonferroni')[1]
 for i in range(len(p_adjusted)):
     #if p_adjusted[i] < 0.05:
     print(labels[i],p_adjusted[i])
+
+print("CORR")
+for i in range(len(corr_p_adjusted)):
+    #if p_adjusted[i] < 0.05:
+    print(corr_labels[i],corr_p_adjusted[i])
