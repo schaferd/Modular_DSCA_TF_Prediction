@@ -103,7 +103,7 @@ class DataProcessing():
                 self.overlap_list = list(self.overlapping_genes)
                 self.overlap_list.sort()
                 print("overlap",len(self.overlap_list))
-
+                
                 self.input_data = self.input_data.loc[:,self.overlap_list]
                 self.input_genes = self.input_data.columns
                 self.genes = self.overlap_list
