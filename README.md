@@ -1,6 +1,6 @@
 # Sparsely Connected Autoencoders for TF Activity Prediction
 
-## Abstract:
+## Abstract
 The activities of transcription factors (TFs) control cellular activities and, in cases of
 dysregulation, can cause disease. It is, however, challenging to measure TF activity experimentally, while gene expression data, 
 its downstream product, can be readily obtained under a variety of conditions. We hypothesized that artificial neural network models could
@@ -39,24 +39,24 @@ dorothea   1.6.0
 ```
 
 ## Download Data
-Training Data: (url coming soon)
-DoRothEA perturbation tests: (url coming soon)
-Knock-out tests: (url coming soon)
+Training Data: (url coming soon) <br />
+DoRothEA perturbation tests: (url coming soon) <br />
+Knock-out tests: (url coming soon) <br />
 
 Training or evaluating the model with your own data 	
 Training or evaluation data must be a pandas DataFrame object with columns as Ensembl gene names and rows as samples. Training data should be saved as a pickle file. Data should be z-scored across genes. 
 
-Train Model
+## Train Model
 `params.sh` contains a list of assignable hyperparameters and data filenames
 `train.sh` contains the script to start the training
 To train model using slurm run: `sbatch train.sh`
 
-Evaluate Model
+## Evaluate Model
 `eval_saved_models/params.sh` contains a list of assignable parameters and data filenames
 
 `eval_saved_models/eval_models.py` requires that the list of run directories where model files can be found is assigned at the end of the script in the dictionary params by the key model_dirs. You must also specify which input data file(s) you are using as parameters to functions when calling evaluation methods toward the end of the script. Run using `sbatch eval_models.sh` while in the `eval_saved_models/` directory
 
 `eval_saved_models/eval.py` requires that the input data file you are using be specified as parameters to the functions when calling evaluation methods (found towards the end of the script). Run using `sbatch eval.sh` while in the `eval_saved_models/` directory.
 
-For both evaluation scripts: model module types in `params.sh` must match the module types in the saved model file. Other parameters like width and depth must also be identical. 
+For both evaluation scripts: model module types in `params.sh` must match the module types in the saved model file. Other parameters such as width and depth must also be identical. 
 
