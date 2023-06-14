@@ -19,6 +19,7 @@ consistent in tests to evaluate consistency across trained models.
 ## Installation
 ### Required Software:
 ### To train model (python3):
+```
 matplotlib            	3.5.2
 numpy                 	1.22.4
 pandas                	1.4.3
@@ -30,9 +31,12 @@ seaborn               	0.11.2
 sparselinear          	0.0.5
 torch-scatter         	2.0.9
 torch-sparse          	0.6.13
+```
 ### To run DoRothEA comparison (R):
+```
 tidyverse   1.3.2
 dorothea   1.6.0
+```
 
 ## Download Data
 Training Data: (url coming soon)
