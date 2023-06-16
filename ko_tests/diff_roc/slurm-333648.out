@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/diff_roc/ko_data_processing.py", line 107, in <module>
+    obj = ActivityInput(data_dir,ae_input_genes)
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/diff_roc/ko_data_processing.py", line 25, in __init__
+    pos_df,neg_df = self.get_pos_neg_matrices()
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/diff_roc/ko_data_processing.py", line 47, in get_pos_neg_matrices
+    print(pos_neg_df)
+UnboundLocalError: local variable 'pos_neg_df' referenced before assignment

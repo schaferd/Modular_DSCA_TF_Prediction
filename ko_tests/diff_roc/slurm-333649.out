@@ -1,0 +1,38 @@
+       ENSG00000204580  ENSG00000223680  ...  ENSG00000261359  ENSG00000236819
+GATA2         7.980536         7.980536  ...         0.000000         0.000000
+KLF2          7.087540         7.087540  ...         0.000000         0.000000
+MYCN          7.993073         7.993073  ...         0.000000         0.000000
+MYC           0.000000         0.000000  ...         4.357353         3.823844
+SRF          10.655154        10.655154  ...         0.000000         0.000000
+USF1          6.917004         6.917004  ...         0.000000         0.000000
+AR            0.000000         0.000000  ...         4.980749         4.538017
+ERG           0.000000         0.000000  ...         4.544917         3.941149
+ESR1         10.669328        10.669328  ...         0.000000         0.000000
+HSF1         11.431579        11.431579  ...         0.000000         0.000000
+KLF4          0.000000         0.000000  ...         0.000000         0.000000
+RUNX1         7.200345         7.200345  ...         0.000000         0.000000
+
+[12 rows x 24098 columns]
+       ENSG00000204580  ENSG00000223680  ...  ENSG00000261359  ENSG00000236819
+GATA2         0.493876         0.493876  ...        -0.576128        -0.575125
+KLF2          0.288999         0.288999  ...        -0.576128        -0.575125
+MYCN          0.496752         0.496752  ...        -0.576128        -0.575125
+MYC          -1.337069        -1.337069  ...         1.593770         1.569901
+SRF           1.107504         1.107504  ...        -0.576128        -0.575125
+USF1          0.249874         0.249874  ...        -0.576128        -0.575125
+AR           -1.337069        -1.337069  ...         1.904212         1.970523
+ERG          -1.337069        -1.337069  ...         1.687174         1.635704
+ESR1          1.110756         1.110756  ...        -0.576128        -0.575125
+HSF1          1.285636         1.285636  ...        -0.576128        -0.575125
+KLF4         -1.337069        -1.337069  ...        -0.576128        -0.575125
+RUNX1         0.314880         0.314880  ...        -0.576128        -0.575125
+
+[12 rows x 24098 columns]
+Traceback (most recent call last):
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/diff_roc/ko_data_processing.py", line 107, in <module>
+    obj = ActivityInput(data_dir,ae_input_genes)
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/diff_roc/ko_data_processing.py", line 25, in __init__
+    pos_df,neg_df = self.get_pos_neg_matrices()
+  File "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/ko_tests/diff_roc/ko_data_processing.py", line 51, in get_pos_neg_matrices
+    raise ValueError()
+ValueError

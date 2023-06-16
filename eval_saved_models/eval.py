@@ -82,11 +82,13 @@ class EvalModel():
         input_tensor = torch.tensor(input_data.to_numpy()).float().to(device)
         return input_data, input_tensor
 
-    def run_pert_tests(self, ko_data_path):
-        auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,ko_data_path,self.model.encoder,os.getcwd()+'/outputs/')
+    def run_pert_tests(self, ko_data_path,save_path):
+        auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,ko_data_path,self.model.encoder,save_path)
+        return auc
 
-    def run_ko_tests(self, ko_data_path):
-        auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,ko_data_path,self.model.encoder,os.getcwd()+'/outputs/')
+    def run_ko_tests(self, ko_data_path, save_path):
+        auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,ko_data_path,self.model.encoder,save_path)
+        return auc
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Script to load and evaluate an autoencoder',formatter_class=RawTextHelpFormatter)

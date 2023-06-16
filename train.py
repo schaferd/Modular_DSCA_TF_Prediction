@@ -90,6 +90,7 @@ class Train():
         self.moa_subset = self.param_dict["moa_subset"]
         self.moa = self.param_dict["moa"]
 
+        self.pert_data_path = self.param_dict["pert_data_path"]
         self.ko_data_path = self.param_dict["ko_data_path"]
         self.final_eval = self.param_dict["final_eval"]
 
@@ -258,7 +259,7 @@ class Train():
             self.ko_activity_dirs.append(ko_activity_dir)
             if not os.path.exists(ko_activity_dir):
                 os.makedirs(ko_activity_dir)
-            auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,self.ko_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,self.pert_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
             self.aucs.append(auc)
             print("ko tf ranks",ko_tf_ranks)
             if self.final_eval:
@@ -616,7 +617,8 @@ if __name__ == "__main__":
         parser.add_argument('--moa_beta',type=float,required=False,default=0.9,help='beta value for moa')
         parser.add_argument('--moa_subset',type=int,required=False,default=0,help='subset value for moa')
 
-        parser.add_argument('--ko_data_path',type=str,required=True,help='path to roc data')
+        parser.add_argument('--ko_data_path',type=str,required=True,help='path to pert data')
+        parser.add_argument('--pert_data_path',type=str,required=False,help='path to ko data')
 
         parser.add_argument('--record',type=str,required=False,default=False,help="true if you want results to recorded in record table")
         parser.add_argument('--record_path',type=str,required=True,help="where you want to keep the record/where record is kept")
@@ -664,6 +666,7 @@ if __name__ == "__main__":
         moa = args.moa
 
         ko_data_path = args.ko_data_path
+        pert_data_path = args.pert_data_path
         final_eval = args.final_eval
 
         cycles = args.cycles
@@ -710,6 +713,7 @@ if __name__ == "__main__":
             "moa_beta":moa_beta,
 
             "ko_data_path":ko_data_path,
+            "pert_data_path":pert_data_path,
             "final_eval":final_eval,
 
             "record":record,

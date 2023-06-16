@@ -32,9 +32,9 @@ class ActivityInput():
         self.ae_input_genes = ae_input_genes
         self.knowledge = knowledge
 
-        control_file = '/nobackup/users/schaferd/ae_project_data/ko_data/control.csv'
-        treated_file = '/nobackup/users/schaferd/ae_project_data/ko_data/treated.csv'
-        self.sample_to_kotf = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/id_tf.csv',delimiter='\t').drop(columns=['Unnamed: 0'])
+        control_file = data_dir+'/control.csv'
+        treated_file = data_dir+'/treated.csv'
+        self.sample_to_kotf = pd.read_csv(data_dir+'/id_tf.csv',delimiter='\t').drop(columns=['Unnamed: 0'])
         print(self.sample_to_kotf)
         
         self.control_samples_df = pd.read_csv(control_file,index_col=0, delimiter='\t')

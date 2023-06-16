@@ -6,7 +6,7 @@ export FIG_FREQ=100 # how often figures will get generated
 
 export SAVE_MODEL=False # true if model saves
 export SAVE_FIGS=True # true if model saves figures
-export FINAL_EVAL=False # true if want to perform final eval
+export FINAL_EVAL=True # true if want to perform final eval
 export RECORD=False
 
 #########ENCODER#########
@@ -54,7 +54,8 @@ export DE_MAX_LR_SCHED=1e-2 # max learning rate if scheduling
 export PRIOR_KNOWLEDGE_PATH=/nobackup/users/schaferd/ae_project_data/dorothea_tf_gene_relationship_knowledge/dorotheaSelectionAB_1.tsv
 INPUT_DATA_TYPE="hdf_agg_data" #poss types: roc_agg_data, hdf_agg_data, pos_df, neg_df, pos_neg_df, blood_data
 export INPUT_DATA=/home/schaferd/ae_project/input_data_processing/${INPUT_DATA_TYPE}.pkl
-export KO_DATA_PATH="/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/"
+export KO_DATA_PATH="/nobackup/users/schaferd/ae_project_data/ko_data/" #should contain path to treated and control samples and id_tf.pkl
+export PERT_DATA_PATH="/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/" # should contain path to postive and negative samples 
 
 export curr_path=$(pwd)
 

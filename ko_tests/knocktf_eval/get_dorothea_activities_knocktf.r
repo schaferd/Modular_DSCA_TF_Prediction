@@ -36,6 +36,8 @@ for (file in files){
   gex <- data.table::fread(paste0('/nobackup/users/schaferd/ae_project_data/ko_data/ko_datafiles/',file),header = T) %>% column_to_rownames('Sample_ID')
   gex <- rbind(gex,gex)
 
+  print(t(gex))
+
   TF_activities = run_viper(t(gex), pkn_filtered, options =  settings)
   TF_activities <- as.data.frame(TF_activities) %>% select(rownames(gex)[1])
   TF_activities <- t(TF_activities)
