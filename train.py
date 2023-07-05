@@ -80,7 +80,8 @@ class Train():
 
         self.en_l2_reg = self.param_dict["en_l2_reg"]
         self.de_l2_reg = self.param_dict["de_l2_reg"]
-        self.l1 = self.param_dict["l1"]
+        self.en_l1_reg = self.param_dict["en_l1_reg"]
+        self.de_l1_reg = self.param_dict["de_l1_reg"]
         self.dropout_rate = self.param_dict["dropout_rate"]
         self.noise = self.param_dict["noise"]
         self.batch_norm = self.param_dict["batch_norm"]
@@ -259,11 +260,11 @@ class Train():
             self.ko_activity_dirs.append(ko_activity_dir)
             if not os.path.exists(ko_activity_dir):
                 os.makedirs(ko_activity_dir)
-            auc, activity_df, ranked_df, ko_tf_ranks = get_ko_roc_curve(self.data_obj,self.pert_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+            auc, activity_df, ranked_df, ko_tf_ranks, koed_tfs = get_ko_roc_curve(self.data_obj,self.pert_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
             self.aucs.append(auc)
             print("ko tf ranks",ko_tf_ranks)
             if self.final_eval:
-                auc, activity_df, ranked_df, ko_tf_ranks = get_knocktf_ko_roc_curve(self.data_obj,self.ko_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
+                auc, activity_df, ranked_df, ko_tf_ranks, koed_tfs = get_knocktf_ko_roc_curve(self.data_obj,self.ko_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
                 self.knocktf_aucs.append(auc)
                 print("knocktf ko tf ranks",ko_tf_ranks)
             self.test_corrs.append(test_correlation)
@@ -309,7 +310,10 @@ class Train():
                 epoch_moa_loss += moa_loss.cpu().detach()
                 epoch_moa_violations += violations.cpu().detach()
 
-            train_loss = train_loss+moa_loss
+            en_l1_norm = sum(p.sum() for p in model.encoder.parameters())*self.en_l1_reg
+            de_l1_norm = sum(p.sum() for p in model.decoder.parameters())*self.de_l1_reg
+
+            train_loss = train_loss+moa_loss+en_l1_norm+de_l1_norm
             
             """
             if len(self.training_losses)<(fold+1):
@@ -443,12 +447,14 @@ class Train():
             save_path += "_lrensched_maxlr"+str(self.en_max_lr)
         if self.de_lr_sched:
             save_path += "_lrensched_maxlr"+str(self.de_max_lr)
-        if self.de_l2_reg > 0:
-            save_path += "_del2"+str(self.de_l2_reg)
         if self.en_l2_reg > 0:
             save_path += "_enl2"+str(self.en_l2_reg)
-        if self.l1 > 0:
-            save_path += "_l1"+str(self.l1)
+        if self.de_l2_reg > 0:
+            save_path += "_del2"+str(self.de_l2_reg)
+        if self.en_l1_reg > 0:
+            save_path += "_enl1"+str(self.en_l1_reg)
+        if self.de_l1_reg > 0:
+            save_path += "_del1"+str(self.de_l1_reg)
         if self.moa > 0:
             save_path +="_moa"+str(self.moa)
         if self.dropout_rate > 0:
@@ -592,6 +598,8 @@ if __name__ == "__main__":
         parser.add_argument('--model_type',type=str,required=False,default='ae',help='describe model')
         parser.add_argument('--en_l2',type=float,required=False,default=0,help='value for l2 regularization')
         parser.add_argument('--de_l2',type=float,required=False,default=0,help='value for l2 regularization')
+        parser.add_argument('--en_l1',type=float,required=False,default=0,help='value for l1 regularization')
+        parser.add_argument('--de_l1',type=float,required=False,default=0,help='value for l1 regularization')
         parser.add_argument('--dropout',type=float,required=False,default=0,help='prob of a given node being deactivated')
         parser.add_argument('--noise',type=float,required=True)
         parser.add_argument('--save_model',type=str,required=False,default=False,help='whether you want the model data to be saved')
@@ -601,7 +609,6 @@ if __name__ == "__main__":
         parser.add_argument('--de_lr_sched',type=str,required=False,default=False,help='True if you want learning rate to be scheduled')
         parser.add_argument('--batch_norm',type=str,required=False,default=False,help='True if you want batch normalization layers')
         parser.add_argument('--batch_size',type=int,required=True,help='size of training batches')
-        parser.add_argument('--l1',type=float,required=False,default=0,help='value for l1 reg')
         parser.add_argument('--warm_restart',type=int,required=False,default=0,help='how many times during training do you want adam to restart')
         parser.add_argument('--en_max_lr',type=float,required=False,default=1e-3,help='max value lr_sched will reach')
         parser.add_argument('--de_max_lr',type=float,required=False,default=1e-3,help='max value lr_sched will reach')
@@ -640,7 +647,8 @@ if __name__ == "__main__":
 
         en_l2_reg = args.en_l2
         de_l2_reg = args.de_l2
-        l1 = args.l1
+        en_l1_reg = args.en_l1
+        de_l1_reg = args.de_l1
         batch_norm = args.batch_norm.lower() == 'true'
         noise = args.noise
         dropout_rate = args.dropout
@@ -696,7 +704,8 @@ if __name__ == "__main__":
 
             "en_l2_reg":en_l2_reg,
             "de_l2_reg":de_l2_reg,
-            "l1":l1,
+            "en_l1_reg":en_l1_reg,
+            "de_l1_reg":de_l1_reg,
             "batch_norm":batch_norm,
             "noise":noise,
             "dropout_rate":dropout_rate,

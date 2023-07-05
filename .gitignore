@@ -1,2 +1,4 @@
 **/archive
 slurm_out
+*.png
+*.out

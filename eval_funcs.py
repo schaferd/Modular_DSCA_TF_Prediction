@@ -129,12 +129,12 @@ def get_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
         'cycle':cycle
     }
     obj = getROCCurve(ae_args=ae_args)
-    return obj.auc, obj.diff_activities, obj.scaled_rankings, obj.ko_tf_ranks
+    return obj.auc, obj.diff_activities, obj.scaled_rankings, obj.ko_tf_ranks, obj.index_to_ko_tfs
 
 
 
 
-def get_knocktf_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0):
+def get_knocktf_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cycle=0,control="control.csv",treated="treated.csv"):
     tf_gene_dict = {tf:data_obj.tf_gene_dict[tf].keys() for tf in data_obj.tf_gene_dict.keys()}
     print("GETTING KO ROC CURVE")
     print("data_obj.tfs",data_obj.tfs)
@@ -148,11 +148,13 @@ def get_knocktf_ko_roc_curve(data_obj,roc_data_path,encoder,save_path,fold=0,cyc
         'tf_list':data_obj.tfs,
         'out_dir':save_path,
         'fold':fold,
-        'cycle':cycle
+        'cycle':cycle,
+        'control':control,
+        'treated':treated
     }
     obj = knocktf_roc(ae_args=ae_args)
 
-    return obj.auc, obj.diff_activities, obj.scaled_rankings, obj.ko_tf_ranks
+    return obj.auc, obj.diff_activities, obj.scaled_rankings, obj.ko_tf_ranks, obj.ko_tfs
 
 
 

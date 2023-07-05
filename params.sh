@@ -6,13 +6,13 @@ export FIG_FREQ=100 # how often figures will get generated
 
 export SAVE_MODEL=False # true if model saves
 export SAVE_FIGS=True # true if model saves figures
-export FINAL_EVAL=True # true if want to perform final eval
+export FINAL_EVAL=False # true if want to perform final eval
 export RECORD=False
 
 #########ENCODER#########
-export FULLY_CONNECTED_ENCODER=false
+export FULLY_CONNECTED_ENCODER=true
 export TF_GROUPED_FC_INDEP_ENCODER=false
-export SHALLOW_ENCODER=true
+export SHALLOW_ENCODER=false
 
 #########DECODER#########
 export FULLY_CONNECTED_DECODER=false
@@ -20,13 +20,15 @@ export GENE_GROUPED_FC_INDEP_DECODER=false
 export SHALLOW_DECODER=true
 
 
-export SPLITS=2 # how many splits you want for cross validation
-export CYCLES=1
+export SPLITS=1 # how many splits you want for cross validation
+export CYCLES=3
 
 export EN_L2=0 # L2 norm for Encoder
 export DE_L2=0 # L2 norm for Decoder
+export EN_L1=0 # L1 norm for Encoder
+export DE_L1=0 # L1 norm for Decoder
 export DROPOUT=0 # dropout rate
-export NOISE=0 #Add Gaussian Noise to input
+export NOISE=0 # Add Gaussian Noise to input
 export BATCH_NORM=False # true if want batch norm
 
 export MOA_BETA=0.9

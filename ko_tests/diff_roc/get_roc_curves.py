@@ -36,7 +36,7 @@ class getROCCurve():
         self.diff_activities = self.load_diff_activities(self.activity_file)
         with open(obj.out_dir+'/ko_tf_index.pkl','rb') as f:
             self.index_to_ko_tfs = pkl.load(f)
-        self.scaled_rankings,self.rankings = self.rank_matrix()
+        self.scaled_rankings,self.rankings, self.pert_tfs = self.rank_matrix()
         #self.perturbation_df,self.unscaled_rank_df = self.get_perturbation_info()
         self.perturbation_df = self.get_perturbation_info()
         self.tfs_of_interest = self.get_tfs_of_interest()
@@ -58,7 +58,7 @@ class getROCCurve():
         scaled_rank_matrix.index = pert_tfs
         print('scaled rank matrix')
         print(scaled_rank_matrix)
-        return scaled_rank_matrix, ranked_matrix
+        return scaled_rank_matrix, ranked_matrix, pert_tfs
 
     def get_perturbation_info(self):
         rank_df = pd.melt(self.scaled_rankings,value_vars=self.scaled_rankings.columns,ignore_index=False)

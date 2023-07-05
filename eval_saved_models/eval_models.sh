@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -N 1
 #SBATCH -n 1
-#SBATCH -o /nobackup/users/schaferd/ae_project_outputs/slurm_outputs/modular_out/slurm%j.out
+#SBATCH -o /home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/slurm/slurm%j.out
 #SBATCH --mem=128GB
 #SBATCH --gres=gpu:1
 #SBATCH --time=20:00:00

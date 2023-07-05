@@ -151,7 +151,9 @@ def get_knowledge(knowledge_path,overlap_set):
         
 
 if __name__ == '__main__':
-    activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/TF_activities_dorothea_relconn10/'
+    #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/TF_activities_dorothea_relconn10/'
+    #activity_dir = '/nobackup/users/schaferd/ae_project_data/encode_ko_data/dorothea_activities/'
+    activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/fc_filtered/viper_data/viper_activities_0.5/'
     #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/sample_tf_activities/'
     obj = getROCCurve(activity_dir)
     """

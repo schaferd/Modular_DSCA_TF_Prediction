@@ -21,7 +21,7 @@ class getKnockTFROCCurve():
         self.fold = None
         self.cycle = None
         if len(self.ae_args.keys()) > 0:
-            obj = gai.ActivityInput(ae_args['embedding'],ae_args['data_dir'],ae_args['knowledge'],ae_args['overlap_genes'],ae_args['ae_input_genes'],ae_args['tf_list'],ae_args['out_dir'])
+            obj = gai.ActivityInput(ae_args['embedding'],ae_args['data_dir'],ae_args['knowledge'],ae_args['overlap_genes'],ae_args['ae_input_genes'],ae_args['tf_list'],ae_args['out_dir'],control_file=ae_args["control"],treated_file=ae_args["treated"])
             #self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(obj.save_path) if os.path.isfile('/'.join([obj.save_path,f])) and 'diff_activities' in f}
             self.activity_file = obj.out_dir+'/knockout_diff_activities.csv'
             activity_dir = obj.out_dir

@@ -2,7 +2,7 @@ library(tidyverse)
 library(dorothea)
 
 
-contrast_folder = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/contrasts/'
+contrast_folder = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_contrasts/'
 
 ### Create an output folder-------------------------------------------------
 outFolder <- paste0('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/KOfilteredPKN_output_',file.path(format(Sys.time(), "%F %H-%M")))

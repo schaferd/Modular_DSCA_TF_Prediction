@@ -15,11 +15,11 @@ from check_consistency_ko import calculate_consistency, make_random_ranks, kenda
 plt.rcParams.update({'font.size': 13})
 
 #base_path = '/nobackup/users/schaferd/ae_project_outputs/final_eval/'
-base_path = '/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/'
-shallow1 = base_path+'save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/'
-shallow2 = base_path+'save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_14.26.53/'
-deep1 = base_path+'save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.56/'
-deep2 = base_path+'save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.31/'
+base_path = '/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/unfiltered/'
+shallow1 = base_path+'shallow_shallow/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/'
+shallow2 = base_path+'shallow_shallow/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_14.26.53/'
+deep1 = base_path+'fc_g/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.56/'
+deep2 = base_path+'fc_g/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.31/'
 
 deep_pert = pd.read_pickle(deep1+'aucs.pkl')+pd.read_pickle(deep2+'aucs.pkl')
 deep_knocktf = pd.read_pickle(deep1+'knocktf_aucs.pkl')+pd.read_pickle(deep2+'knocktf_aucs.pkl')
@@ -35,8 +35,8 @@ random_const = make_random_ranks(deep1)
 deep_const = calculate_consistency(deep1)[1]+calculate_consistency(deep2)[1]
 shallow_const = calculate_consistency(shallow1)[1]+calculate_consistency(shallow2)[1]
 
-dorothea_pert = 0.66
-dorothea_knocktf=0.56
+dorothea_pert = 0.639
+dorothea_knocktf=0.60
 title_sub_space = 1.02
 swarmplot_color = 'lightsteelblue'
 d_line_color = 'darkgrey'
@@ -58,10 +58,15 @@ fig.set_figheight(6)
 plt.subplots_adjust(left=0.1,bottom=0.2,right=0.9,top=0.8,wspace=0.35,hspace=0)
 """
 
+"""
 def final_auc(fig):
     fig.subplots_adjust(left=0.1,bottom=0.2,right=0.9,top=0.8,wspace=0.35,hspace=0)
     ax = fig.subplots(1,2)
-    a = ax[0]
+    pert_test(ax[0])
+    ko_test(ax[1])
+"""
+
+def pert_test(a): 
     x_ticks = ["S-S","FC-G","VIPER"]
     with sns.color_palette("Paired"):
         sns.boxplot(data=[shallow_pert,deep_pert],ax=a,showfliers=False,**PROPS)
@@ -69,11 +74,12 @@ def final_auc(fig):
     a.set_xticklabels(x_ticks)
     a.set_title("Perturbation Validation", fontsize='x-large',y=title_sub_space)
     a.axhline(y=dorothea_pert, color=d_line_color, linestyle='--',zorder=0)
+    #a.axhline(y=0.5, color='lightcoral', linestyle='--',zorder=0)
     a.set_xlabel("Method")
     a.set_ylabel("ROC AUC")
     a.set_ylim(0.5,0.8)
 
-    a = ax[1]
+def ko_test(a):
     x_ticks = ["S-S","FC-G","VIPER"]
     with sns.color_palette("Paired"):
         sns.boxplot(data=[shallow_knocktf,deep_knocktf],ax=a,showfliers=False,**PROPS)
@@ -81,9 +87,10 @@ def final_auc(fig):
     a.set_xticklabels(x_ticks)
     a.set_title("Knock-out Validation", fontsize='x-large',y=title_sub_space)
     a.axhline(y=dorothea_knocktf, color=d_line_color, linestyle='--',zorder=0)
+    #a.axhline(y=0.5, color='lightcoral', linestyle='--',zorder=0)
     a.set_xlabel("Method")
     a.set_ylabel("ROC AUC")
-    a.set_ylim(0.5,0.8)
+    a.set_ylim(0.4,0.8)
 
 def final_const(a):
     #fig.subplots_adjust(left=0.1,bottom=0.2,right=0.9,top=0.8,wspace=0.35,hspace=0)
@@ -151,5 +158,4 @@ print('ko: shallow,dor,',str(pval))
 
 p_adjusted = multipletests(pvalues,alpha=0.05,method='bonferroni')
 print(p_adjusted,labels)
-
 

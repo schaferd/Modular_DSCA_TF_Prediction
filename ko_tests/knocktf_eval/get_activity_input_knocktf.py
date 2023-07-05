@@ -22,7 +22,7 @@ print("is gpu 1"+str(is_gpu))
 
 
 class ActivityInput():
-    def __init__(self,encoder,data_dir,knowledge,overlap_genes,ae_input_genes,tf_list,out_dir):
+    def __init__(self,encoder,data_dir,knowledge,overlap_genes,ae_input_genes,tf_list,out_dir,control_file='control.csv',treated_file='treated.csv'):
         self.data_dir = data_dir
         self.encoder = encoder.to(device)
         self.encoder.eval()
@@ -32,23 +32,25 @@ class ActivityInput():
         self.ae_input_genes = ae_input_genes
         self.knowledge = knowledge
 
-        control_file = data_dir+'/control.csv'
-        treated_file = data_dir+'/treated.csv'
+        self.control_file = data_dir+control_file
+        self.treated_file = data_dir+treated_file
+        #control_file = data_dir+'/filtered_processed_control_df.csv'
+        #treated_file = data_dir+'/filtered_processed_treat_df.csv'
+        #control_file = data_dir+'/filtered_microarray_control.csv'
+        #treated_file = data_dir+'/filtered_microarray_treated.csv'
         self.sample_to_kotf = pd.read_csv(data_dir+'/id_tf.csv',delimiter='\t').drop(columns=['Unnamed: 0'])
         print(self.sample_to_kotf)
         
-        self.control_samples_df = pd.read_csv(control_file,index_col=0, delimiter='\t')
-        self.treated_samples_df = pd.read_csv(treated_file,index_col=0, delimiter='\t')
+        self.control_samples_df = pd.read_csv(self.control_file,index_col=0, delimiter='\t')
+        self.treated_samples_df = pd.read_csv(self.treated_file,index_col=0, delimiter='\t')
 
         self.control_samples = self.filter_matrix(self.control_samples_df)
         self.treated_samples = self.filter_matrix(self.treated_samples_df)
 
         control_embedding = self.encoder(self.control_samples).cpu().detach().numpy()
         treated_embedding = self.encoder(self.treated_samples).cpu().detach().numpy()
-        diff_embedding = control_embedding-treated_embedding
 
-        print("diff embedding")
-        print(diff_embedding)
+        diff_embedding = control_embedding-treated_embedding
 
         diff_df = pd.DataFrame(data=diff_embedding,index=self.treated_samples_df.index,columns=self.tf_list)
 
