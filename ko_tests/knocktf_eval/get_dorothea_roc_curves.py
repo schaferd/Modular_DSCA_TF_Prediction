@@ -22,56 +22,65 @@ class getROCCurve():
         #self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(viper_activity_dir) if os.path.isfile('/'.join([viper_activity_dir,f])) and 'viper_pred.csv' in f}
         #activity_dir = viper_activity_dir
         self.activities = {f:self.load_activity_file('/'.join([self.activity_dir,f]),exp_ids[f])  for f in self.activity_files}
-        self.aggregate_activities = self.aggregate_matrix()
-        print(self.aggregate_activities)
-        self.scaled_rankings = self.rank_matrix()
+
+        self.control_activities = self.aggregate_matrix({f:self.activities[f] for f in self.activities.keys() if 'control' in f})
+        self.treated_activities = self.aggregate_matrix({f:self.activities[f] for f in self.activities.keys() if 'treated' in f}).loc[self.control_activities.index,:]
+        self.diff_activities = self.control_activities - self.treated_activities
+        self.diff_activities.to_csv(activity_dir+'/diff_activities.csv',sep='\t')
+
+        #self.aggregate_activities = self.aggregate_matrix()
+        #self.aggregate_activities.T.to_csv(activity_dir+'/agg_activities.csv',sep='\t')
+        #print(self.aggregate_activities)
+        self.scaled_rankings = self.rank_matrix(self.diff_activities)
         self.perturbation_df = self.get_perturbation_info()
         self.tfs_of_interest = self.get_tfs_of_interest()
         self.auc = self.get_roc()
 
 
     def load_activity_file(self,activity_file,exp_id):
-        #returns pandas df
-        df = pd.read_csv(activity_file)
-        #df['Sample'] = exp_id
+        df = pd.read_csv(activity_file,index_col=0)
         return df
 
-    def aggregate_matrix(self):
-        activities_list = list(self.activities.values())
-        df = pd.concat(activities_list,ignore_index=True).set_index('Unnamed: 0',drop=True).T
+    def aggregate_matrix(self,activities):
+        df = pd.concat(activities.values(),axis=0)
+        #df = pd.concat(activities_list,ignore_index=True).set_index('Unnamed: 0',drop=True).T
+        #df = pd.DataFrame(activities).rename(columns=self.exp_ids).T
         return df
 
-    def rank_matrix(self):
-        ranked_matrix = self.aggregate_activities.rank(axis = 0,method='min',na_option='keep',ascending='False')
-        scaled_rank_matrix = ranked_matrix/ranked_matrix.max(axis=0)
-        return scaled_rank_matrix
+    def rank_matrix(self,df):
+        #ranked_matrix = self.aggregate_activities.rank(axis = 1,method='min',na_option='keep',ascending='False')
+        #scaled_rank_matrix = ranked_matrix/ranked_matrix.max(axis=0)
+        print(df)
+        return df.rank(axis=1)/df.shape[0]
 
     def get_perturbation_info(self):
         print(self.scaled_rankings)
-        rank_df = pd.melt(self.scaled_rankings,value_vars=self.scaled_rankings.columns,ignore_index=False)
-        rank_df.rename(columns={'Unnamed: 0':'Sample'},inplace=True)
-        print(rank_df)
-        rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
-        activity_df = pd.melt(self.aggregate_activities,value_vars=self.scaled_rankings.columns,ignore_index=False)
-        activity_df.rename({'value':'pred activity'},axis=1,inplace=True)
-        rank_df['pred activity'] = activity_df['pred activity']
-        per_list = [self.id_to_tf[sample] for sample in rank_df['Sample'].tolist()]
+        tfs = self.scaled_rankings.columns
+        self.scaled_rankings = self.scaled_rankings.reset_index(names='Sample_ID')
+        rank_df = pd.melt(self.scaled_rankings,id_vars=['Sample_ID'],value_vars=tfs,value_name='scaled ranking',var_name='TF',ignore_index=False)
+
+        #rank_df = pd.melt(self.scaled_rankings,value_vars=self.scaled_rankings.columns,ignore_index=False)
+        #rank_df.rename(columns={'Unnamed: 0':'Sample'},inplace=True)
+        #print(rank_df)
+        #rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
+        #activity_df = pd.melt(self.aggregate_activities,value_vars=self.scaled_rankings.columns,ignore_index=False)
+        #activity_df.rename({'value':'pred activity'},axis=1,inplace=True)
+        #rank_df['pred activity'] = activity_df['pred activity']
+        per_list = [self.id_to_tf[sample] for sample in rank_df['Sample_ID'].tolist()]
         #per_list = [name.split('.')[0] for name in rank_df['Sample'].tolist()]
         rank_df['perturbed tf'] = per_list
-        print(rank_df)
         return rank_df
 
     def get_tfs_of_interest(self):
         df_tf_of_interest = self.perturbation_df.copy()
-        df_tf_of_interest.reset_index(inplace=True)
-        df_tf_of_interest.rename(columns={'index':'regulon'},inplace=True)
-        print(df_tf_of_interest)
+        #df_tf_of_interest.reset_index(inplace=True)
+        #df_tf_of_interest.rename(columns={'index':'regulon'},inplace=True)
         pert_tfs = set(df_tf_of_interest['perturbed tf'].tolist())
-        pred_tfs = set(df_tf_of_interest['regulon'].tolist())
+        pred_tfs = set(df_tf_of_interest['TF'].tolist())
         #df_tf_of_interest['tf'] = df_tf_of_interest.index
         tfs_of_interest = list(pert_tfs.intersection(pred_tfs))
-        df_tf_of_interest = df_tf_of_interest[df_tf_of_interest['regulon'].isin(tfs_of_interest)]
-        df_tf_of_interest['is tf perturbed'] = (df_tf_of_interest['regulon'] == df_tf_of_interest['perturbed tf'])
+        df_tf_of_interest = df_tf_of_interest[df_tf_of_interest['TF'].isin(tfs_of_interest)]
+        df_tf_of_interest['is tf perturbed'] = (df_tf_of_interest['TF'] == df_tf_of_interest['perturbed tf'])
         #df_tf_of_interest.fillna(0,inplace=True)
         df_tf_of_interest.dropna(inplace=True)
         print(df_tf_of_interest)
@@ -153,7 +162,7 @@ def get_knowledge(knowledge_path,overlap_set):
 if __name__ == '__main__':
     #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/TF_activities_dorothea_relconn10/'
     #activity_dir = '/nobackup/users/schaferd/ae_project_data/encode_ko_data/dorothea_activities/'
-    activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/fc_filtered/viper_data/viper_activities_0.5/'
+    activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/treated_rank_filtered/viper_data/viper_activities_0.1/'
     #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/sample_tf_activities/'
     obj = getROCCurve(activity_dir)
     """

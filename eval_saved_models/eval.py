@@ -12,6 +12,7 @@ import sys
 import time
 import random
 import torch
+from captum.attr import IntegratedGradients
 import pandas as pd
 from torch import nn
 import torch
@@ -39,10 +40,12 @@ print("is gpu "+str(is_gpu))
 encoder_path = os.environ["encoder_path"]
 print(encoder_path)
 sys.path.insert(1,encoder_path)
+print(encoder_path)
 from encoder import AEEncoder
 
 decoder_path = os.environ["decoder_path"]
 sys.path.insert(1,decoder_path)
+print(decoder_path)
 from decoder import AEDecoder
 
 class EvalModel():
@@ -67,8 +70,25 @@ class EvalModel():
         output_dfs = [pd.DataFrame({'Genes':self.data_obj.overlap_list,'counts':o}) for o in output]
         return output, output_dfs
 
-    def load_input_data(self, input_data_path):
-        input_data = pd.read_pickle(input_data_path)
+    def get_attribution(self, input_data_path, outpath, pickle=True):
+        input_data, input_tensor = self.load_input_data(input_data_path,pickle=pickle)
+        ig = IntegratedGradients(self.model.encoder)
+        tf_attr_dict = {}
+        for i,tf in enumerate(self.data_obj.tfs):
+            attr,delta = ig.attribute(input_tensor,target=i,return_convergence_delta=True)
+            attr = attr.detach().cpu().numpy()
+            tf_attr_dict[tf] = attr
+        
+        pd.to_pickle(tf_attr_dict,outpath+'/tf_attr_dict.pkl')
+        pd.to_pickle(self.data_obj.input_genes, outpath+'/input_genes.pkl')
+        return tf_attr_dict
+
+    def load_input_data(self, input_data_path,pickle=True):
+        if pickle:
+            input_data = pd.read_pickle(input_data_path)
+        else:
+            input_data = pd.read_csv(input_data_path,index_col=0,sep='\t')
+
         try:
             input_data = input_data.loc[:,self.data_obj.input_genes]
         except:

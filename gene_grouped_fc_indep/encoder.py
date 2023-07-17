@@ -27,8 +27,8 @@ class AEEncoder(nn.Module):
                 self.middle_weights = matrices_obj.middle_layer 
                 self.final_weights = [matrices_obj.first_layer[1],matrices_obj.first_layer[0]]
 
-                #activ_func = nn.LeakyReLU()
-                activ_func = nn.ReLU()
+                activ_func = nn.LeakyReLU()
+                #activ_func = nn.ReLU()
 
                 encoder = collections.OrderedDict()
 

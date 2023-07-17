@@ -21,6 +21,7 @@ class AEEncoder(nn.Module):
 
                 mid_layer_size = self.gene_size*self.width_multiplier
                 activ_func = nn.SELU()
+                #activ_func = nn.LeakyReLU()
 
                 encoder = collections.OrderedDict()
 
@@ -30,6 +31,7 @@ class AEEncoder(nn.Module):
                 encoder['encoder_activ1'] = activ_func
 
                 for i in range(2,self.depth+2):
+                    encoder['do_'+str(i)] = nn.Dropout(0.1)
                     encoder['encoder_'+str(i)] = nn.Linear(mid_layer_size,mid_layer_size)
                     encoder['encoder_activ'+str(i)] = activ_func
 

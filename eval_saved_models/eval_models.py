@@ -91,8 +91,7 @@ class EvalModels():
         plt.title(self.encoder+' '+self.decoder)
         plt.savefig(self.out_dir+"auc_vs_ko_rank.png")
 
-
-    def run_ko_tests(self,ko_data_path,control="control.csv",treated="treated.csv"):
+    def run_ko_tests(self,ko_data_path,control="control.csv",treated="treated.csv",attribution=False):
         auc_dict = {}
         aucs = []
         average_activities = None
@@ -120,7 +119,13 @@ class EvalModels():
                 auc_dict[model_type] = [auc]
             else:
                 auc_dict[model_type].append(auc)
+            
+            if attribution:
+                control_attr = m.get_attribution(ko_data_path+control,new_path,pickle=False)
+                treated_attr = m.get_attribution(ko_data_path+treated,new_path,pickle=False)
+
         average_activities = average_activities / df_counter
+        average_activities.to_csv(self.out_dir+'ensemble_activities.csv',sep='\t')
 
         ko_obj = getROC(average_activities, koed_tfs, 'ko_roc.png')
         print("ko auc",ko_obj.auc)
@@ -265,8 +270,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     params = {
-        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.31/','/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.56/'],
-        "model_dirs":['/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/','/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_14.26.53/'],
+        "model_dirs":['/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.31/','/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.56/'],
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/','/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_14.26.53/'],
         "encoder_depth":args.encoder_depth,
         "decoder_depth":args.decoder_depth,
         "train_data":args.train_data,
@@ -277,10 +282,10 @@ if __name__ == "__main__":
 
     obj = EvalModels(params)
     #obj.create_rank_freq_heatmaps('/nobackup/users/schaferd/drug_perturb_data/belinostat_dexamethasone_A549/untreated/samples.pkl','/nobackup/users/schaferd/drug_perturb_data/belinostat_dexamethasone_A549/belinostat_treated/samples.pkl')
-    #obj.run_ko_tests("/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/",'control_relevant_samples.csv','treated_relevant_samples.csv')
+    obj.run_ko_tests("/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/",'control_relevant_samples.csv','treated_relevant_samples.csv',attribution=True)
     #obj.create_performance_vs_ko_rank_curve("/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/fc_filtered/")
-    obj.get_embeddings('/nobackup/users/schaferd/ae_project_data/hdf_gene_expression_data/agg_data.pkl')
-    obj.get_embeddings('/nobackup/users/schaferd/ae_project_data/encode_ko_data/combined_processed_df.pkl')
+    #obj.get_embeddings('/nobackup/users/schaferd/ae_project_data/hdf_gene_expression_data/agg_data.pkl')
+    #obj.get_embeddings('/nobackup/users/schaferd/ae_project_data/encode_ko_data/combined_processed_df.pkl')
     #obj.run_ko_tests("/nobackup/users/schaferd/ae_project_data/encode_ko_data/")
     #obj.run_pert_tests("/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/")
     #avg_model = obj.get_consensus_model()

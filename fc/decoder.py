@@ -20,7 +20,8 @@ class AEDecoder(nn.Module):
 
                 mid_layer_size = self.gene_size*self.width_multiplier 
 
-                activ_func = nn.SELU()
+                #activ_func = nn.SELU()
+                activ_func = nn.LeakyReLU()
                 #activ_func = nn.Tanh()
 
                 decoder = collections.OrderedDict()

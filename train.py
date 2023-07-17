@@ -310,8 +310,8 @@ class Train():
                 epoch_moa_loss += moa_loss.cpu().detach()
                 epoch_moa_violations += violations.cpu().detach()
 
-            en_l1_norm = sum(p.sum() for p in model.encoder.parameters())*self.en_l1_reg
-            de_l1_norm = sum(p.sum() for p in model.decoder.parameters())*self.de_l1_reg
+            en_l1_norm = sum(p.sum() for p in self.model.encoder.parameters())*self.en_l1_reg
+            de_l1_norm = sum(p.sum() for p in self.model.decoder.parameters())*self.de_l1_reg
 
             train_loss = train_loss+moa_loss+en_l1_norm+de_l1_norm
             

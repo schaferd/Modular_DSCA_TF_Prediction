@@ -27,8 +27,8 @@ class AEEncoder(nn.Module):
                 self.middle_weights = matrices_obj.middle_layers
                 self.final_weights = matrices_obj.final_layer
                     
-                #activ_func = nn.LeakyReLU()
-                activ_func = nn.SELU()
+                activ_func = nn.LeakyReLU()
+                #activ_func = nn.SELU()
 
                 encoder = collections.OrderedDict()
 
@@ -40,6 +40,7 @@ class AEEncoder(nn.Module):
                 #    encoder['bn_encoder1'] = nn.BatchNorm1d(max(self.first_weights[0])+1,affine=False)
 
                 for i in range(2,self.depth+2):
+                    encoder['do_'+str(i)] = nn.Dropout(0.1)
                     encoder['encoder_'+str(i)] = sl.SparseLinear(max(self.middle_weights[1])+1,max(self.middle_weights[0])+1,connectivity=torch.tensor(self.middle_weights))
                     encoder['encoder_activ'+str(i)] = activ_func
                     #if self.is_bn:

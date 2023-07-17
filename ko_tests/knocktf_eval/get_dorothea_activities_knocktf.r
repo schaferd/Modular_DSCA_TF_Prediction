@@ -1,10 +1,11 @@
 library(tidyverse)
 library(dorothea)
+library(decoupleR)
 
 
 
 ### Create an output folder-------------------------------------------------
-outFolder <- paste0('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/fc_filtered/viper_data/KOfilteredPKN_output_',file.path(format(Sys.time(), "%F %H-%M")))
+outFolder <- paste0('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/KOfilteredPKN_output_',file.path(format(Sys.time(), "%F %H-%M")))
 #outFolder <- paste0('/nobackup/users/schaferd/ae_project_data/encode_ko_data/KOfilteredPKN_output_',file.path(format(Sys.time(), "%F %H-%M")))
 #outFolder <- '/nobackup/users/schaferd/ae_project_data/ko_data/KOfilteredPKN_output_TFActivities/'
 dir.create(outFolder)
@@ -15,7 +16,7 @@ pkn <- read.delim('/nobackup/users/schaferd/ae_project_data/dorothea_tf_gene_rel
 
 
 ### Load list of files and get unique KOed TFs from the names----------------
-files <- list.files('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/fc_filtered/viper_data/filtered_0.4/')
+files <- list.files('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/samples/')
 #files <- list.files('/nobackup/users/schaferd/ae_project_data/encode_ko_data/ko_datafiles/')
 tfs_koed <- NULL
 for (i in 1:length(files)){
@@ -35,7 +36,7 @@ pkn_filtered <- pkn_filtered %>% select(-confidence)
 minNrOfGenes = 10 
 settings = list(verbose = F, minsize = minNrOfGenes)
 for (file in files){
-  gex <- data.table::fread(paste0('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/fc_filtered/viper_data/filtered_0.4/',file),header = T) %>% column_to_rownames('Sample_ID')
+  gex <- data.table::fread(paste0('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/samples/',file),header = T) %>% column_to_rownames('Sample_ID')
   #gex <- data.table::fread(paste0('/nobackup/users/schaferd/ae_project_data/encode_ko_data/ko_datafiles/',file),header = T) %>% column_to_rownames('Sample_ID')
   gex <- rbind(gex,gex)
 

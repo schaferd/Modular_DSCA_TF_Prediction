@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export MODEL_TYPE='test' # name for model
-export EPOCHS=1 #how many epochs will be created
+export EPOCHS=100 #how many epochs will be created
 export FIG_FREQ=100 # how often figures will get generated
 
 export SAVE_MODEL=False # true if model saves
@@ -20,14 +20,14 @@ export GENE_GROUPED_FC_INDEP_DECODER=false
 export SHALLOW_DECODER=true
 
 
-export SPLITS=1 # how many splits you want for cross validation
-export CYCLES=3
+export SPLITS=3 # how many splits you want for cross validation
+export CYCLES=1
 
 export EN_L2=0 # L2 norm for Encoder
-export DE_L2=0 # L2 norm for Decoder
-export EN_L1=0 # L1 norm for Encoder
+export DE_L2=0.001 # L2 norm for Decoder
+export EN_L1=0.0005 # L1 norm for Encoder
 export DE_L1=0 # L1 norm for Decoder
-export DROPOUT=0 # dropout rate
+export DROPOUT=0.5 # dropout rate
 export NOISE=0 # Add Gaussian Noise to input
 export BATCH_NORM=False # true if want batch norm
 
@@ -39,13 +39,13 @@ export WARM_RESTART=0 # how many times you want to restart settings
 
 export BATCH_SIZE=128 # number of training examples used in one iteration
 export WIDTH_MULTIPLIER=1 #input_size*width_multiplier for width of hidden layers
-export RELATIONSHIPS_FILTER=10
+export RELATIONSHIPS_FILTER=8
 
 export ENCODER_DEPTH=2
 export DECODER_DEPTH=2
 
-export EN_LEARNING_RATE=0.01 # learning rate
-export DE_LEARNING_RATE=0.01 # learning rate
+export EN_LEARNING_RATE=0.0001 # learning rate
+export DE_LEARNING_RATE=0.001 # learning rate
 
 export EN_LR_SCHED=false # true if want learning rate to be scheduled
 export EN_MAX_LR_SCHED=1e-1 # max learning rate if scheduling

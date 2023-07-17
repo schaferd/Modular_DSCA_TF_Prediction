@@ -1,0 +1,14 @@
+[2023-07-13 13:49:20] [INFO]    [OmnipathR] Initialized cache: `/home/schaferd/.cache/OmnipathR`.
+[2023-07-13 13:49:20] [INFO]    [OmnipathR] Welcome to OmnipathR!
+[2023-07-13 13:49:20] [INFO]    [OmnipathR] Cache record does not exist: `https://omnipathdb.org/interactions?genesymbols=yes&datasets=dorothea&organisms=9606&dorothea_levels=A,B,C,D&fields=sources,references,curation_effort,dorothea_level&license=academic`
+[2023-07-13 13:49:20] [INFO]    [OmnipathR] Retrieving URL: `https://omnipathdb.org/interactions?genesymbols=yes&datasets=dorothea&organisms=9606&dorothea_levels=A,B,C,D&fields=sources,references,curation_effort,dorothea_level&license=academic`
+[2023-07-13 13:49:20] [TRACE]   [OmnipathR] Attempt 1/3: `https://omnipathdb.org/interactions?genesymbols=yes&datasets=dorothea&organisms=9606&dorothea_levels=A,B,C,D&fields=sources,references,curation_effort,dorothea_level&license=academic`
+[2023-07-13 13:49:33] [INFO]    [OmnipathR] Cache item `46d37339bbc3f9a05bb89ccb79278cf1233f5cdf` version 1: status changed from `unknown` to `started`.
+[2023-07-13 13:49:33] [TRACE]   [OmnipathR] Exporting object to RDS: `/home/schaferd/.cache/OmnipathR/46d37339bbc3f9a05bb89ccb79278cf1233f5cdf-1.rds`.
+[2023-07-13 13:49:35] [TRACE]   [OmnipathR] Exported RDS to `/home/schaferd/.cache/OmnipathR/46d37339bbc3f9a05bb89ccb79278cf1233f5cdf-1.rds`.
+[2023-07-13 13:49:35] [INFO]    [OmnipathR] Download ready [key=46d37339bbc3f9a05bb89ccb79278cf1233f5cdf, version=1]
+[2023-07-13 13:49:35] [INFO]    [OmnipathR] Cache item `46d37339bbc3f9a05bb89ccb79278cf1233f5cdf` version 1: status changed from `started` to `ready`.
+[2023-07-13 13:49:40] [SUCCESS] [OmnipathR] Downloaded 278830 interactions.
+[2023-07-13 13:50:13] [TRACE]   [OmnipathR] Loaded data from RDS `/home/schaferd/.cache/OmnipathR/46d37339bbc3f9a05bb89ccb79278cf1233f5cdf-1.rds`.
+[2023-07-13 13:50:13] [INFO]    [OmnipathR] Loaded from cache: `https://omnipathdb.org/interactions?genesymbols=yes&datasets=dorothea&organisms=9606&dorothea_levels=A,B,C,D&fields=sources,references,curation_effort,dorothea_level&license=academic`
+[2023-07-13 13:50:18] [SUCCESS] [OmnipathR] Loaded 278830 interactions from cache.

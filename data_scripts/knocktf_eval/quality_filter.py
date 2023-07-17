@@ -115,14 +115,14 @@ def filter_if_relevant(control_df,treat_df):
     return control_df, treat_df
 
 #control_df, treat_df = filter_by_diff_ranking(control_df,treat_df)
-control_df, treat_df = filter_by_fc_ranking(control_df,treat_df)
-#control_df, treat_df = filter_if_relevant(control_df,treat_df)
+#control_df, treat_df = filter_by_fc_ranking(control_df,treat_df)
+control_df, treat_df = filter_if_relevant(control_df,treat_df)
 
 #treat_df.to_csv("filtered_data/relevant_data/treated_relevant_samples.csv",sep='\t')
 #control_df.to_csv("filtered_data/relevant_data/control_relevant_samples.csv",sep='\t')
 
-treat_df.to_csv("filtered_data/fc_filtered/filtered_treated_"+str(FILTER_CUTOFF)+".csv", sep='\t')
-control_df.to_csv("filtered_data/fc_filtered/filtered_control_"+str(FILTER_CUTOFF)+".csv",sep='\t')
+#treat_df.to_csv("filtered_data/fc_filtered/filtered_treated_"+str(FILTER_CUTOFF)+".csv", sep='\t')
+#control_df.to_csv("filtered_data/fc_filtered/filtered_control_"+str(FILTER_CUTOFF)+".csv",sep='\t')
 
 control_df = control_df.rename(columns=ensembl_to_gene)
 treat_df = treat_df.rename(columns=ensembl_to_gene)
@@ -130,8 +130,8 @@ treat_df = treat_df.rename(columns=ensembl_to_gene)
 print(control_df)
 print(treat_df)
 
-new_dir = 'filtered_data/fc_filtered/viper_data/filtered_'+str(FILTER_CUTOFF)+'/'
-#new_dir = 'filtered_data/relevant_data/viper_data/samples/'
+#new_dir = 'filtered_data/fc_filtered/viper_data/filtered_'+str(FILTER_CUTOFF)+'/'
+new_dir = 'filtered_data/relevant_data/viper_data/samples/'
 if not os.path.exists(new_dir):
     os.makedirs(new_dir)
 
@@ -146,7 +146,7 @@ for sample_id in list(treat_df.index):
     
 
 for sample_id in control_df.index:
-    sample = treat_df[treat_df.index == sample_id]
+    sample = control_df[control_df.index == sample_id]
     sample.index.name = 'Sample_ID'
     tf = sample_to_tf[sample_id]
     file_name = new_dir+sample_id+'.'+tf+'.'+'control.csv'

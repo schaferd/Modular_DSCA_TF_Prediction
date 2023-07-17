@@ -1,0 +1,8 @@
+[2023-07-13 13:54:42] [INFO]    [OmnipathR] Initialized cache: `/home/schaferd/.cache/OmnipathR`.
+[2023-07-13 13:54:42] [INFO]    [OmnipathR] Welcome to OmnipathR!
+[2023-07-13 13:54:43] [TRACE]   [OmnipathR] Loaded data from RDS `/home/schaferd/.cache/OmnipathR/46d37339bbc3f9a05bb89ccb79278cf1233f5cdf-1.rds`.
+[2023-07-13 13:54:43] [INFO]    [OmnipathR] Loaded from cache: `https://omnipathdb.org/interactions?genesymbols=yes&datasets=dorothea&organisms=9606&dorothea_levels=A,B,C,D&fields=sources,references,curation_effort,dorothea_level&license=academic`
+[2023-07-13 13:54:48] [SUCCESS] [OmnipathR] Loaded 278830 interactions from cache.
+[2023-07-13 13:56:00] [TRACE]   [OmnipathR] Loaded data from RDS `/home/schaferd/.cache/OmnipathR/46d37339bbc3f9a05bb89ccb79278cf1233f5cdf-1.rds`.
+[2023-07-13 13:56:00] [INFO]    [OmnipathR] Loaded from cache: `https://omnipathdb.org/interactions?genesymbols=yes&datasets=dorothea&organisms=9606&dorothea_levels=A,B,C,D&fields=sources,references,curation_effort,dorothea_level&license=academic`
+[2023-07-13 13:56:04] [SUCCESS] [OmnipathR] Loaded 278830 interactions from cache.

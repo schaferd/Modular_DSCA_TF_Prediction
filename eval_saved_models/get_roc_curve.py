@@ -35,15 +35,9 @@ class getROC():
         self.outpath = outpath
         self.ko_tfs = ko_tfs
         self.scaled_rankings = self.rank_matrix()
-        print("scaled rankings")
-        print(self.scaled_rankings)
         #self.perturbation_df,self.unscaled_rank_df = self.get_perturbation_info()
         self.perturbation_df = self.get_perturbation_info()
-        print("perturbation df")
-        print(self.perturbation_df)
         self.tfs_of_interest = self.get_tfs_of_interest()
-        print("tfs of interest")
-        print(self.tfs_of_interest)
         self.auc, self.ko_tf_ranks = self.get_roc()
 
 
@@ -59,25 +53,19 @@ class getROC():
     def rank_matrix(self):
         pert_tfs = self.ko_tfs 
         ranked_matrix = self.diff_activities.rank(axis = 1,method='min',na_option='keep',ascending=True)
-        print('tfs', len(self.diff_activities.columns))
         ranked_matrix = ranked_matrix.reset_index(drop=True)
         scaled_rank_matrix = (ranked_matrix.T/ranked_matrix.max(axis=1)).T
         scaled_rank_matrix.index = self.diff_activities.index
         scaled_rank_matrix['KO_TF'] = list(pert_tfs)
-        print('scaled rank matrix')
-        print(scaled_rank_matrix)
         return scaled_rank_matrix
 
     def get_perturbation_info(self):
         rank_df = self.scaled_rankings.reset_index(names="Sample_ID")
-        print(rank_df)
         rank_df = pd.melt(rank_df,value_vars=self.scaled_rankings.columns,id_vars=['Sample_ID','KO_TF'],ignore_index=False)
-        print(rank_df)
 
         rank_df = rank_df.reset_index(drop=True)
         rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
         rank_df.rename({'variable':'regulon'},axis=1,inplace=True)
-        print(rank_df)
         return rank_df#, unscaled_rank_df
 
     def get_tfs_of_interest(self):
@@ -90,7 +78,6 @@ class getROC():
         df_tf_of_interest = df_tf_of_interest[df_tf_of_interest['regulon'].isin(tfs_of_interest)]
         df_tf_of_interest['is tf perturbed'] = (df_tf_of_interest['regulon'] == df_tf_of_interest['KO_TF'])
         koed_tfs_df = df_tf_of_interest.loc[df_tf_of_interest['is tf perturbed'] == True]
-        print(koed_tfs_df)
         return df_tf_of_interest
 
     def get_roc(self):
@@ -115,10 +102,10 @@ class getROC():
 
         print("auc")
         print(auc)
-        print("fpr")
-        print(fpr)
-        print("tpr")
-        print(tpr)
+        #print("fpr")
+        #print(fpr)
+        #print("tpr")
+        #print(tpr)
 
         self.plot_ROC(tpr,fpr,auc)
         return auc, ranks_of_ko_tfs
@@ -129,24 +116,25 @@ class getROC():
         for i in range(len(po)):
             target.append(1)
         obs = ne+po
-        print("target")
-        print(target)
-        print("observations")
-        print(obs)
+        #print("target")
+        #print(target)
+        #print("observations")
+        #print(obs)
         fpr,tpr,thresholds = metrics.roc_curve(target,obs)
         auc = metrics.roc_auc_score(target,obs)
         return auc,fpr,tpr
 
     def plot_ROC(self,tpr,fpr,auc):
-        plt.clf()
-        plt.plot(fpr,tpr,color="darkorange",label="ROC Curve (area = %0.2f)"%auc)
-        plt.plot([0,1],[0,1],color="navy",linestyle="--")
-        plt.xlim([0.0,1.0])
-        plt.ylim([0.0,1.05])
-        plt.xlabel("False Positive Rate")
-        plt.ylabel("True Positive Rate")
-        plt.title("ROC Curve (area = %0.2f)"%auc)
-        plt.savefig("outputs/"+self.outpath)
+        if self.outpath is not None:
+            plt.clf()
+            plt.plot(fpr,tpr,color="darkorange",label="ROC Curve (area = %0.2f)"%auc)
+            plt.plot([0,1],[0,1],color="navy",linestyle="--")
+            plt.xlim([0.0,1.0])
+            plt.ylim([0.0,1.05])
+            plt.xlabel("False Positive Rate")
+            plt.ylabel("True Positive Rate")
+            plt.title("ROC Curve (area = %0.2f)"%auc)
+            plt.savefig("outputs/"+self.outpath)
 
 
 def open_pkl(pkl_file):

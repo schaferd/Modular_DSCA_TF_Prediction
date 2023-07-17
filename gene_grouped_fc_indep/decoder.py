@@ -29,6 +29,7 @@ class AEDecoder(nn.Module):
 
                 #activ_func = nn.Tanh()
                 activ_func = nn.SELU()
+                #activ_func = nn.LeakyReLU()
 
                 decoder = collections.OrderedDict()
 
