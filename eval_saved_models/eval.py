@@ -70,6 +70,40 @@ class EvalModel():
         output_dfs = [pd.DataFrame({'Genes':self.data_obj.overlap_list,'counts':o}) for o in output]
         return output, output_dfs
 
+    def infer_missing_gene_expression(self, input_data_path):
+        """
+        Input dataframe should have 
+            - NaNs where gene values are missing
+            - z-scored across genes using non-NaN values
+            - should be a pickle file
+        """
+
+        #filter df to only input genes
+        input_data = pd.read_pickle(input_data_path)
+        temp_df = pd.DataFrame(columns=self.data_obj.input_genes)
+        overlap_genes = list(set(self.data_obj.input_genes).intersection(set(input_data.columns)))
+        input_data = input_data.loc[:,overlap_genes]
+        input_data = pd.concat([pd.DataFrame(columns=self.data_obj.input_genes),input_data],axis=0)
+
+        #create mask for missing genes (1 for missing gene, 0 otherwise)
+        missing_gene_mask = input_data.notna()
+        missing_gene_mask = missing_gene_mask.replace({True:0,False:1})
+
+        input_data = input_data.fillna(0)
+        input_tensor = torch.tensor(input_data.to_numpy()).float().to(device)
+
+        #send data through AE and apply mask
+        output = self.model(input_tensor).cpu().detach().numpy()
+        output_df = pd.DataFrame(output,columns=self.data_obj.input_genes,index=input_data.index)
+        missing_gene_values = missing_gene_mask*output_df
+        missing_gene_values_np = missing_gene_values.to_numpy()
+        print(missing_gene_values_np[np.nonzero(missing_gene_values_np)])
+
+        #add output (with mask applied) to input data, return result
+        new_input_data = input_data.add(missing_gene_values)
+
+        return new_input_data
+
     def get_attribution(self, input_data_path, outpath, pickle=True):
         input_data, input_tensor = self.load_input_data(input_data_path,pickle=pickle)
         ig = IntegratedGradients(self.model.encoder)
@@ -96,9 +130,6 @@ class EvalModel():
             overlap_genes.sort()
             input_data = input_data.loc[:,overlap_genes]
             input_data = pd.concat([pd.DataFrame(columns=self.data_obj.input_genes),input_data],axis=0).astype(float)
-        print("input data")
-        print(input_data)
-        print(self.data_obj.input_genes)
         input_tensor = torch.tensor(input_data.to_numpy()).float().to(device)
         return input_data, input_tensor
 

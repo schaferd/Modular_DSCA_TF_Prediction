@@ -100,8 +100,8 @@ class getROC():
 
         auc,fpr,tpr = self.get_aucROC(negatives.tolist(),positives.tolist())
 
-        print("auc")
-        print(auc)
+        #print("auc")
+        #print(auc)
         #print("fpr")
         #print(fpr)
         #print("tpr")

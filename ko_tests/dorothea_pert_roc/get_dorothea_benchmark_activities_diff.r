@@ -1,8 +1,10 @@
 library(tidyverse)
+library(data.table)
 library(decoupleR)
 
 
-contrast_folder = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_contrasts/'
+#contrast_folder = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_contrasts/'
+contrast_folder = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/'
 
 ### Create an output folder-------------------------------------------------
 outFolder <- paste0('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/KOfilteredPKN_output_',file.path(format(Sys.time(), "%F %H-%M")))
@@ -15,12 +17,12 @@ pkn <- read.delim('/nobackup/users/schaferd/ae_project_data/dorothea_tf_gene_rel
 
 ### Load list of files and get unique KOed TFs from the names----------------
 #files <- list.files('/nobackup/users/schaferd/ae_project_data/ko_data/ko_datafiles/')
-files = list.files(path = contrast_folder, pattern = 'rdata', full.names = T)
+files = list.files(path = contrast_folder, pattern = 'tive.csv', full.names = T)
 tfs_koed <- NULL
 for (i in 1:length(files)){
   file <- files[i]
   #tfs_koed[i] <- str_split_fixed(file,"\\.",4)[1,2]
-  tfs_koed[i] <- tail(unlist(strsplit(files[i], split = '/')),1) %>% gsub('.rdata', '', .) %>% strsplit(., split = '\\.') %>% unlist(.)
+  tfs_koed[i] <- tail(unlist(strsplit(files[i], split = '/')),1) %>% gsub('.csv', '', .) %>% strsplit(., split = '_') %>% unlist(.)
 }
 tfs_koed <- unique(tfs_koed)
 
@@ -35,19 +37,24 @@ pkn_filtered <- pkn_filtered %>% select(-confidence)
 minNrOfGenes = 10 
 settings = list(verbose = F, minsize = minNrOfGenes)
 for (file in files){
+  gex <- data.table::fread(file,header = F,col.names=c('index','genes','expression'))
+  gex <- gex %>% drop_na()
+  gex <- gex %>% group_by(genes) %>% summarize(expression=mean(expression))
+  gex <- gex %>% column_to_rownames('genes')
+  gex <- rbind(gex,gex)
   #gex <- data.table::fread(paste0(contrast_folder,file),header = T) %>% column_to_rownames('Sample_ID')
-  DEGs <- get(load(file))
+  #DEGs <- get(load(file))
   #gex <- rbind(gex,gex)
 
-  myStatistics = matrix(DEGs$logFC, dimnames = list(DEGs$Symbol, 'logFC') )
-  myPvalue = matrix(DEGs$P.Value, dimnames = list(DEGs$Symbol, 'P.Value') )
-  mySignature = (qnorm(myPvalue/2, lower.tail = FALSE) * sign(myStatistics))[, 1]
-  mySignature = mySignature[order(mySignature, decreasing = T)]
+  #myStatistics = matrix(DEGs$logFC, dimnames = list(DEGs$Symbol, 'logFC') )
+  #myPvalue = matrix(DEGs$P.Value, dimnames = list(DEGs$Symbol, 'P.Value') )
+  #mySignature = (qnorm(myPvalue/2, lower.tail = FALSE) * sign(myStatistics))[, 1]
+  #mySignature = mySignature[order(mySignature, decreasing = T)]
 
-  mySignature <- cbind(as.matrix(mySignature),as.matrix(mySignature))
+  #mySignature <- cbind(as.matrix(mySignature),as.matrix(mySignature))
 
-  VIPER_TF_activities = run_viper(mySignature, pkn_filtered,.source='tf',.target='target',.mor='mor',minsize=minNrOfGenes)
-  SCENIC_TF_activities = run_aucell(mySignature,pkn_filtered,.source='tf',.target='target',minsize=minNrOfGenes)
+  VIPER_TF_activities = run_viper(gex, pkn_filtered,.source='tf',.target='target',.mor='mor',minsize=minNrOfGenes)
+  SCENIC_TF_activities = run_aucell(gex,pkn_filtered,.source='tf',.target='target',minsize=minNrOfGenes)
   #TF_activities = run_viper(mySignature, pkn_filtered, options = settings)
   #TF_activities <- as.data.frame(TF_activities) %>% select(V1)
 

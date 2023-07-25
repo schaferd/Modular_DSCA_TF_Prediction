@@ -35,14 +35,16 @@ class ActivityInput():
         pos_file = data_dir+'/pos_df.csv'
         neg_file = data_dir+'/neg_df.csv'
 
-        #self.positive_samples_df = pd.read_csv(pos_file,index_col=0)
-        self.positive_samples_df = pd.read_csv(pos_file)
-        self.index_to_ko_tfs = dict(self.positive_samples_df['Unnamed: 0'])
-        self.positive_samples_df = self.positive_samples_df.drop(columns=['Unnamed: 0'])
-        #self.negative_samples_df = pd.read_csv(neg_file,index_col=0)
-        self.negative_samples_df = pd.read_csv(neg_file)
-        self.negative_samples_df = self.negative_samples_df.drop(columns=['Unnamed: 0'])
-
+        self.positive_samples_df = pd.read_csv(pos_file,index_col=0)
+        #self.positive_samples_df = pd.read_csv(pos_file)
+        #self.index_to_ko_tfs = dict(self.positive_samples_df['Unnamed: 0'])
+        self.index_to_ko_tfs = {id_ : id_.split('_')[1] for id_ in self.positive_samples_df.index}
+        #self.positive_samples_df = self.positive_samples_df.drop(columns=['Unnamed: 0'])
+        self.negative_samples_df = pd.read_csv(neg_file,index_col=0)
+        #self.negative_samples_df = pd.read_csv(neg_file)
+        print(self.negative_samples_df)
+        #self.negative_samples_df = self.negative_samples_df.drop(columns=['Unnamed: 0'])
+        
         self.pos_samples = self.filter_matrix(self.positive_samples_df)
         self.neg_samples = self.filter_matrix(self.negative_samples_df)
 
@@ -72,7 +74,7 @@ class ActivityInput():
         #print('pert tfs',len(pert_tfs))
         print('tf list',len(self.tf_list))
         #diff_df = pd.DataFrame(data=diff_embedding,index=pert_tfs,columns=self.tf_list)
-        diff_df = pd.DataFrame(data=diff_embedding,columns=self.tf_list)
+        diff_df = pd.DataFrame(data=diff_embedding,columns=self.tf_list,index=self.positive_samples_df.index)
         print('diff df',diff_df)
         diff_df.to_csv(self.out_dir+'/diff_activities.csv')
         with open(self.out_dir+'/ko_tf_index.pkl','wb+') as f:

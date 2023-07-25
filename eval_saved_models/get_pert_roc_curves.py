@@ -41,8 +41,10 @@ class getPertROC():
         self.outpath = outpath
 
         self.scaled_rankings,self.rankings, self.pert_tfs = self.rank_matrix()
+        print(self.scaled_rankings)
         #self.perturbation_df,self.unscaled_rank_df = self.get_perturbation_info()
         self.perturbation_df = self.get_perturbation_info()
+        
         self.tfs_of_interest = self.get_tfs_of_interest()
         self.auc, self.ko_tf_ranks = self.get_roc()
 
@@ -79,6 +81,7 @@ class getPertROC():
         tfs_of_interest = list(pert_tfs.intersection(pred_tfs))
         df_tf_of_interest = df_tf_of_interest[df_tf_of_interest['regulon'].isin(tfs_of_interest)]
         df_tf_of_interest['is tf perturbed'] = (df_tf_of_interest['regulon'] == df_tf_of_interest['perturbed tf'])
+        df_tf_of_interest.dropna(inplace=True)
         koed_tfs_df = df_tf_of_interest.loc[df_tf_of_interest['is tf perturbed'] == True]
         return df_tf_of_interest
 
@@ -86,7 +89,11 @@ class getPertROC():
         observed = self.tfs_of_interest['scaled ranking']
         expected = self.tfs_of_interest['is tf perturbed']+0
 
+        print(observed.isna().sum())
+
         ranks_of_ko_tfs = self.tfs_of_interest[self.tfs_of_interest['is tf perturbed']==1]
+        print(self.tfs_of_interest.isna().sum())
+        print(self.tfs_of_interest)
 
         n_positives = sum(expected == 1)
         n_negatives = sum(expected == 0)
@@ -123,15 +130,16 @@ class getPertROC():
         return auc,fpr,tpr
 
     def plot_ROC(self,tpr,fpr,auc):
-        plt.clf()
-        plt.plot(fpr,tpr,color="darkorange",label="ROC Curve (area = %0.2f)"%auc)
-        plt.plot([0,1],[0,1],color="navy",linestyle="--")
-        plt.xlim([0.0,1.0])
-        plt.ylim([0.0,1.05])
-        plt.xlabel("False Positive Rate")
-        plt.ylabel("True Positive Rate")
-        plt.title("ROC Curve (area = %0.2f)"%auc)
-        plt.savefig('outputs/'+self.outpath)
+        if self.outpath is not None:
+            plt.clf()
+            plt.plot(fpr,tpr,color="darkorange",label="ROC Curve (area = %0.2f)"%auc)
+            plt.plot([0,1],[0,1],color="navy",linestyle="--")
+            plt.xlim([0.0,1.0])
+            plt.ylim([0.0,1.05])
+            plt.xlabel("False Positive Rate")
+            plt.ylabel("True Positive Rate")
+            plt.title("ROC Curve (area = %0.2f)"%auc)
+            plt.savefig('outputs/'+self.outpath)
 
 
 def open_pkl(pkl_file):

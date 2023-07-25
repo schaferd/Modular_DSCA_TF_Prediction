@@ -150,6 +150,7 @@ class EvalModels():
             if not os.path.exists(new_path):
                 os.makedirs(new_path)
             auc, activity_df, index_to_koed_tfs = m.run_pert_tests(ko_data_path,new_path)
+            pd.to_pickle(index_to_koed_tfs,new_path+'/pert_index_to_kotf.pkl')
 
             if average_activities is None:
                 average_activities = activity_df
@@ -162,6 +163,7 @@ class EvalModels():
             else:
                 auc_dict[model_type].append(auc)
         average_activities = average_activities / df_counter
+        average_activities.to_csv(self.out_dir+'dorothea_ensemble_activities.csv',sep='\t')
         print(average_activities)
 
         ko_obj = getPertROC(average_activities, index_to_koed_tfs,'pert_roc.png')
@@ -183,7 +185,15 @@ class EvalModels():
         pd.to_pickle(activities,out_file)
         return activities
 
+    def get_avg_missing_expression(self,input_data_path):
+        new_input_dfs = []
+        for m in self.models:
+            new_input_data = m.infer_missing_gene_expression(input_data_path)
+            new_input_dfs.append(new_input_data)
 
+        new_input_np = np.vstack([[df.to_numpy()] for df in new_input_dfs])
+        avg_input = pd.DataFrame(new_input_np.mean(axis=0),columns=new_input_dfs[0].columns,index=new_input_dfs[0].index)
+        return avg_input
 
         
     
@@ -282,12 +292,17 @@ if __name__ == "__main__":
 
     obj = EvalModels(params)
     #obj.create_rank_freq_heatmaps('/nobackup/users/schaferd/drug_perturb_data/belinostat_dexamethasone_A549/untreated/samples.pkl','/nobackup/users/schaferd/drug_perturb_data/belinostat_dexamethasone_A549/belinostat_treated/samples.pkl')
-    obj.run_ko_tests("/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/",'control_relevant_samples.csv','treated_relevant_samples.csv',attribution=True)
+    #obj.run_ko_tests("/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/",'control_relevant_samples.csv','treated_relevant_samples.csv',attribution=True)
     #obj.create_performance_vs_ko_rank_curve("/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/fc_filtered/")
     #obj.get_embeddings('/nobackup/users/schaferd/ae_project_data/hdf_gene_expression_data/agg_data.pkl')
     #obj.get_embeddings('/nobackup/users/schaferd/ae_project_data/encode_ko_data/combined_processed_df.pkl')
     #obj.run_ko_tests("/nobackup/users/schaferd/ae_project_data/encode_ko_data/")
-    #obj.run_pert_tests("/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/")
+    #obj.models[0].infer_missing_gene_expression('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/pos_df.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/pos_df.csv')
+    #obj.get_avg_missing_expression('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/pos_df.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/pos_df.csv')
+    #obj.get_avg_missing_expression('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.csv')
+    #obj.models[0].infer_missing_gene_expression('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.csv')
+    #obj.run_pert_tests("/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/")
+    obj.run_pert_tests("/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/")
     #avg_model = obj.get_consensus_model()
     #avg_model.run_ko_tests("/nobackup/users/schaferd/ae_project_data/ko_data/","outputs/")
     

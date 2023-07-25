@@ -12,53 +12,36 @@ from pyensembl import EnsemblRelease
 ensembl_data = EnsemblRelease(78)
 
 class getROCCurve():
-    def __init__(self,activity_dir,match):
-        self.activity_dir = activity_dir
-        self.activity_files = [f for f in os.listdir(self.activity_dir) if os.path.isfile('/'.join([self.activity_dir,f])) and match+'_TFactivities' in f]
-
-        exp_ids = {f:f.split('.')[1]+'_'+f.split('_')[-1].split('.')[0] for f in self.activity_files }
-        print(len(exp_ids))
-        tf = {f: f.split('_')[-1].split('.')[0] for f in self.activity_files}
-        self.id_to_tf = {exp_ids[f]:tf[f] for f in self.activity_files}
-        print(len(self.id_to_tf))
-        pd.to_pickle(self.id_to_tf,activity_dir+'/id_to_kotf.pkl')
-        #self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(viper_activity_dir) if os.path.isfile('/'.join([viper_activity_dir,f])) and 'viper_pred.csv' in f}
-        #activity_dir = viper_activity_dir
-
-        self.activities = {f:self.load_activity_file('/'.join([self.activity_dir,f]),exp_ids[f])  for f in self.activity_files}
-        self.aggregate_activities = self.aggregate_matrix()
-        self.diff_activities = self.aggregate_activities
-        self.aggregate_activities.to_csv(activity_dir+'/'+match+'diff_activities.csv',sep='\t')
-        print(self.aggregate_activities)
-        self.scaled_rankings = self.rank_matrix(self.aggregate_activities)
+    def __init__(self,diff_activities,id_to_tf):
+        self.id_to_tf = id_to_tf
+        self.diff_activities = diff_activities
+        self.scaled_rankings = self.rank_matrix(self.diff_activities)
         self.perturbation_df = self.get_perturbation_info()
         self.tfs_of_interest = self.get_tfs_of_interest()
         self.auc = self.get_roc()
 
 
-    def load_activity_file(self,activity_file,exp_id):
-        #returns pandas df
-        print(exp_id)
-        df = pd.read_csv(activity_file)
-        df.index = [exp_id]
-        return df
 
-    def aggregate_matrix(self):
-        #activities_list = list(self.activities.values())
-        df = pd.concat(self.activities.values(),axis=0)
-        #print(activities_list)
-        #df = pd.concat(activities_list,ignore_index=True).set_index('Unnamed: 0',drop=True).T
-        #df = pd.concat(activities_list,ignore_index=True)
-        return df
 
     def rank_matrix(self,df):
+        #ranked_matrix = self.aggregate_activities.rank(axis = 1,method='min',na_option='keep',ascending='False')
+        #scaled_rank_matrix = ranked_matrix/ranked_matrix.max(axis=0)
         return df.rank(axis=1)/df.shape[0]
 
     def get_perturbation_info(self):
         tfs = self.scaled_rankings.columns
         self.scaled_rankings = self.scaled_rankings.reset_index(names='Sample_ID')
         rank_df = pd.melt(self.scaled_rankings,id_vars=['Sample_ID'],value_vars=tfs,value_name='scaled ranking',var_name='TF',ignore_index=False)
+
+        #rank_df = pd.melt(self.scaled_rankings,value_vars=self.scaled_rankings.columns,ignore_index=False)
+        #rank_df.rename(columns={'Unnamed: 0':'Sample'},inplace=True)
+        #print(rank_df)
+        #rank_df.rename({'value':'scaled ranking'},axis=1,inplace=True)
+        #activity_df = pd.melt(self.aggregate_activities,value_vars=self.scaled_rankings.columns,ignore_index=False)
+        #activity_df.rename({'value':'pred activity'},axis=1,inplace=True)
+        #rank_df['pred activity'] = activity_df['pred activity']
         per_list = [self.id_to_tf[sample] for sample in rank_df['Sample_ID'].tolist()]
+        #per_list = [name.split('.')[0] for name in rank_df['Sample'].tolist()]
         rank_df['perturbed tf'] = per_list
         return rank_df
 
@@ -74,7 +57,6 @@ class getROCCurve():
         df_tf_of_interest['is tf perturbed'] = (df_tf_of_interest['TF'] == df_tf_of_interest['perturbed tf'])
         #df_tf_of_interest.fillna(0,inplace=True)
         df_tf_of_interest.dropna(inplace=True)
-        print(df_tf_of_interest)
         return df_tf_of_interest
 
     def get_roc(self):
@@ -123,7 +105,7 @@ class getROCCurve():
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
         plt.title("ROC Curve (area = %0.2f)"%auc)
-        plt.savefig('roc_viper_pert.png')
+        plt.savefig('roc_viper.png')
 
 
 def open_pkl(pkl_file):
@@ -148,17 +130,84 @@ def get_knowledge(knowledge_path,overlap_set):
             elif translated_target in overlap_set:
                 tf_gene_dict[row['tf']] = [row['target']]
     return tf_gene_dict
+
+
+def load_activity_file(activity_file,exp_id):
+    df = pd.read_csv(activity_file)
+    df.index = [exp_id]
+    return df
+
+def aggregate_matrix(activities):
+    df = pd.concat(activities.values(),axis=0)
+    #df = pd.concat(activities_list,ignore_index=True).set_index('Unnamed: 0',drop=True).T
+    #df = pd.DataFrame(activities).rename(columns=self.exp_ids).T
+    return df
+
+def knocktf_diff_activities(activity_dir,method):
+    activity_dir = activity_dir
+    activity_files = [f for f in os.listdir(activity_dir) if (os.path.isfile('/'.join([activity_dir,f])) and method in f) and "diff_activities" not in f]
+
+    exp_ids = {f:'_'.join((f.split('.')[0]).split('_')[2:5]) for f in activity_files }
+
+    tf = {f: f.split('.')[1] for f in activity_files}
+
+    id_to_tf = {exp_ids[f]:tf[f] for f in activity_files}
+    activities = {f:load_activity_file('/'.join([activity_dir,f]),exp_ids[f])  for f in activity_files}
+
+    control_activities = aggregate_matrix({f:activities[f] for f in activities.keys() if 'control' in f})
+    treated_activities = aggregate_matrix({f:activities[f] for f in activities.keys() if 'treated' in f}).loc[control_activities.index,:]
+
+    diff_activities = control_activities - treated_activities
+    diff_activities.to_csv(activity_dir+'/'+method+'diff_activities.csv',sep='\t')
+    return diff_activities, id_to_tf
         
 
-if __name__ == '__main__':
-    #activity_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_qc/b1_perturbations/tf_activities/'
-    activity_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/scenic_viper_TF_activities/'
-    #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/sample_tf_activities/'
-    v_obj = getROCCurve(activity_dir,"VIPER")
+def dorothea_benchmark_diff_activities(activity_dir,method):
+    activity_files = [f for f in os.listdir(activity_dir) if (os.path.isfile('/'.join([activity_dir,f])) and method in f) and "diff_activities" not in f]
 
-    s_obj = getROCCurve(activity_dir,"SCENIC")
-    print('viper',v_obj.auc)
-    print('scenic',s_obj.auc)
+    exp_ids = {f:'_'.join((f.split('.')[0]).split('_')[2:4]) for f in activity_files }
+
+    tf = {f: f.split('.')[0].split('_')[2] for f in activity_files}
+
+    id_to_tf = {exp_ids[f]:tf[f] for f in activity_files}
+    activities = {f:load_activity_file('/'.join([activity_dir,f]),exp_ids[f])  for f in activity_files}
+
+    positive_activities = aggregate_matrix({f:activities[f] for f in activities.keys() if 'positive' in f})
+    negative_activities = aggregate_matrix({f:activities[f] for f in activities.keys() if 'negative' in f}).loc[positive_activities.index,:]
+
+    diff_activities = positive_activities - negative_activities
+    diff_activities.to_csv(activity_dir+'/'+method+'diff_activities.csv',sep='\t')
+    return diff_activities, id_to_tf
+
+if __name__ == '__main__':
+    #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/TF_activities_dorothea_relconn10/'
+    #activity_dir = '/nobackup/users/schaferd/ae_project_data/encode_ko_data/dorothea_activities/'
+
+    knocktf_activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/TF_activities'
+    dorothea_benchmark_activity_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/diff_TF_activities'
+
+    print("KNOCKTF VIPER")
+    knocktf_diff_activities_viper, knocktf_id_to_tf_viper = knocktf_diff_activities(knocktf_activity_dir,'VIPER')
+    knocktf_VIPER_obj = getROCCurve(knocktf_diff_activities_viper, knocktf_id_to_tf_viper)
+
+    print("KNOCKTF SCENIC")
+    knocktf_diff_activities_SCENIC, knocktf_id_to_tf_SCENIC = knocktf_diff_activities(knocktf_activity_dir,'SCENIC')
+    knocktf_SCENIC_obj = getROCCurve(knocktf_diff_activities_SCENIC, knocktf_id_to_tf_SCENIC)
+
+    print("dorothea VIPER")
+    dorotheaB_diff_activities_viper,dB_id_to_tf_viper = dorothea_benchmark_diff_activities(dorothea_benchmark_activity_dir,'VIPER')
+    dorotheaB_VIPER_obj = getROCCurve(dorotheaB_diff_activities_viper,dB_id_to_tf_viper)
+
+    print("dorothea SCENIC")
+    dorotheaB_diff_activities_SCENIC, dB_id_to_tf_SCENIC = dorothea_benchmark_diff_activities(dorothea_benchmark_activity_dir,'SCENIC')
+    dorotheaB_SCENIC_obj = getROCCurve(dorotheaB_diff_activities_SCENIC,dB_id_to_tf_SCENIC)
+
+    #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/sample_tf_activities/'
+    #decoupleR_obj = getROCCurve(activity_dir,'decoupleR')
+    #SCENIC_obj = getROCCurve(activity_dir,'SCENIC')
+
+    #print("viper",VIPER_obj.auc)
+    #print("decoupleR",decoupleR_obj.auc)
     """
     embedding_path = '/nobackup/users/schaferd/ae_project_outputs/vanilla/moa_tests_epochs100_batchsize256_edepth2_ddepth2_lr1e-05_lrsched_moa0.1_7-19_18.36.45/model_encoder_fold0.pth'
     data_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/contrasts/'

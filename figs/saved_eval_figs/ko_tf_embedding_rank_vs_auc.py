@@ -38,7 +38,8 @@ for path in fc_g_path:
 
 s_s_activities = [pd.read_csv(f,index_col=0) for f in s_s_activity_files]
 fc_g_activities = [pd.read_csv(f,index_col=0) for f in fc_g_activity_files]
-viper_activities = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/TF_activities/diff_activities.csv',sep='\t',index_col=0)
+viper_activities = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/TF_activities/VIPERdiff_activities.csv',sep='\t',index_col=0)
+scenic_activities = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/TF_activities/SCENICdiff_activities.csv',sep='\t',index_col=0)
 id_to_kotf = pd.read_pickle('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/shallow_shallow/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/fold0_cycle0/ko_activities_cycle0_fold0/knocktf_sample_to_tf.pkl')
 id_to_kotf = id_to_kotf.set_index('Sample_ID')
 s_s_ensemble = pd.read_csv('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/shallow_shallow/ensemble_activities.csv',sep='\t',index_col=0)
@@ -48,6 +49,7 @@ fc_g_ensemble = pd.read_csv('/home/schaferd/ae_project/Modular_DSCA_TF_Predictio
 s_s_ranks = [df.rank(axis=1)/df.shape[1] for df in s_s_activities]
 fc_g_ranks = [df.rank(axis=1)/df.shape[1] for df in fc_g_activities]
 viper_ranks = viper_activities.rank(axis=1)/viper_activities.shape[1]
+scenic_ranks = scenic_activities.rank(axis=1)/scenic_activities.shape[1]
 s_s_e_ranks = s_s_ensemble.rank(axis=1)/s_s_ensemble.shape[1]
 fc_g_e_ranks = fc_g_ensemble.rank(axis=1)/fc_g_ensemble.shape[1]
 
@@ -63,6 +65,7 @@ def get_ko_tf_df(rank_df):
 s_s_ko_dfs = [get_ko_tf_df(df) for df in s_s_ranks]
 fc_g_ko_dfs = [get_ko_tf_df(df) for df in fc_g_ranks]
 viper_ko_df = get_ko_tf_df(viper_ranks)
+scenic_ko_df = get_ko_tf_df(scenic_ranks)
 s_s_e_ko_df = get_ko_tf_df(s_s_e_ranks)
 fc_g_e_ko_df = get_ko_tf_df(fc_g_e_ranks)
 
@@ -75,24 +78,28 @@ def get_cutoff_samples(df, cutoff):
 s_s_aucs = {}
 fc_g_aucs = {}
 viper_aucs = []
+scenic_aucs = []
 s_s_e_aucs = []
 fc_g_e_aucs = []
 for c in cutoffs:
     s_s_cutoff_samples = [get_cutoff_samples(df,c) for df in s_s_ko_dfs]
     fc_g_cutoff_samples = [get_cutoff_samples(df,c) for df in fc_g_ko_dfs]
     viper_cutoff_samples = get_cutoff_samples(viper_ko_df,c)
+    scenic_cutoff_samples = get_cutoff_samples(scenic_ko_df,c)
     s_s_e_cutoff_samples = get_cutoff_samples(s_s_e_ko_df,c)
     fc_g_e_cutoff_samples = get_cutoff_samples(fc_g_e_ko_df,c)
     
     s_s_cutoff_act = [df.loc[s_s_cutoff_samples[i],:] for i,df in enumerate(s_s_activities)]
     fc_g_cutoff_act = [df.loc[fc_g_cutoff_samples[i],:] for i,df in enumerate(fc_g_activities)]
     viper_cutoff_act = viper_activities.loc[viper_cutoff_samples,:]
+    scenic_cutoff_act = scenic_activities.loc[scenic_cutoff_samples,:]
     s_s_e_cutoff_act = s_s_ensemble.loc[s_s_e_cutoff_samples,:]
     fc_g_e_cutoff_act = fc_g_ensemble.loc[fc_g_e_cutoff_samples,:]
 
     s_s_cutoff_tfs = [id_to_kotf.loc[samples,'TF'] for samples in s_s_cutoff_samples]
     fc_g_cutoff_tfs = [id_to_kotf.loc[samples,'TF'] for samples in fc_g_cutoff_samples]
     viper_cutoff_tfs = id_to_kotf.loc[viper_cutoff_samples,'TF']
+    scenic_cutoff_tfs = id_to_kotf.loc[scenic_cutoff_samples,'TF']
     s_s_e_cutoff_tfs = id_to_kotf.loc[s_s_e_cutoff_samples,'TF']
     fc_g_e_cutoff_tfs = id_to_kotf.loc[fc_g_e_cutoff_samples,'TF']
 
@@ -117,6 +124,11 @@ for c in cutoffs:
     else:
         viper_aucs.append(0)
         
+    if scenic_cutoff_act.shape[0] > 0:
+        scenic_aucs.append(getROC(scenic_cutoff_act,scenic_cutoff_tfs,None).auc)
+    else:
+        scenic_aucs.append(0)
+
     if s_s_e_cutoff_act.shape[0] > 0:
         s_s_e_aucs.append(getROC(s_s_e_cutoff_act,s_s_e_cutoff_tfs,None).auc)
     else:
@@ -134,6 +146,7 @@ fc_g_auc_df['model'] = 'FC-G'
 ae_auc_df = pd.concat([s_s_auc_df,fc_g_auc_df],axis=0)
 
 viper_auc_df = pd.DataFrame({'cutoff':[str(c) for c in cutoffs],'AUC':viper_aucs})
+scenic_auc_df = pd.DataFrame({'cutoff':[str(c) for c in cutoffs],'AUC':scenic_aucs})
 s_s_e_auc_df = pd.DataFrame({'cutoff':[str(c) for c in cutoffs],'AUC':s_s_e_aucs})
 fc_g_e_auc_df = pd.DataFrame({'cutoff':[str(c) for c in cutoffs],'AUC':fc_g_e_aucs})
 
@@ -150,17 +163,20 @@ ae_auc_df = pd.read_pickle('ae_aucs_df.pkl')
 
 
 def ko_tf_plot(ax):
-    palette = {'FC-G':'white','S-S':'lightgrey'}
-    sns.boxplot(x='cutoff',y='AUC',hue='model',data=ae_auc_df,ax=ax,showfliers=False,palette=palette)
+    #palette = {'FC-G':'white','S-S':'lightgrey'}
+    #sns.boxplot(x='cutoff',y='AUC',hue='model',data=ae_auc_df,ax=ax,showfliers=False,palette=palette)
 
     sns.lineplot(x='cutoff',y='AUC',data=viper_auc_df,markers=True,color='red',ax=ax,label='viper')
     sns.scatterplot(x='cutoff',y='AUC',data=viper_auc_df,markers=True,color='red',ax=ax,edgecolor='w',linewidth=1.5,marker='o')
 
-    sns.lineplot(x='cutoff',y='AUC',data=s_s_e_auc_df,markers=True,color='purple',ax=ax,label='S-S Ensemble')
-    sns.scatterplot(x='cutoff',y='AUC',data=s_s_e_auc_df,markers=True,color='purple',ax=ax,edgecolor='w',linewidth=1.5,marker='o')
+    sns.lineplot(x='cutoff',y='AUC',data=scenic_auc_df,markers=True,color='black',ax=ax,label='AUCell')
+    sns.scatterplot(x='cutoff',y='AUC',data=scenic_auc_df,markers=True,color='black',ax=ax,edgecolor='w',linewidth=1.5,marker='o')
+
+    sns.lineplot(x='cutoff',y='AUC',data=s_s_e_auc_df,markers=True,color='orange',ax=ax,label='S-S Ensemble')
+    sns.scatterplot(x='cutoff',y='AUC',data=s_s_e_auc_df,markers=True,color='orange',ax=ax,edgecolor='w',linewidth=1.5,marker='o')
 
     sns.lineplot(x='cutoff',y='AUC',data=fc_g_e_auc_df,markers=True,color='blue',ax=ax,label='FC-G Ensemble')
-    sns.scatterplot(x='cutoff',y='AUC',data=fc_g_e_auc_df,markers=True,color='purple',ax=ax,edgecolor='w',linewidth=1.5,marker='o')
+    sns.scatterplot(x='cutoff',y='AUC',data=fc_g_e_auc_df,markers=True,color='blue',ax=ax,edgecolor='w',linewidth=1.5,marker='o')
 
     ax.set_ylim(0.4,1)
     ax.set_ylabel('ROC AUC')
@@ -173,4 +189,4 @@ fig,ax = plt.subplots()
 fig.set_figwidth(7)
 fig.set_figheight(5)
 ko_tf_plot(ax)
-fig.savefig('embedding_ranking_vs_auc.png')
+fig.savefig('embedding_ranking_vs_auc_line_plot.png')

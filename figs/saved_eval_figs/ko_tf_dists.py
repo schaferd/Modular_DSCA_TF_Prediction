@@ -5,32 +5,87 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
+"""
 viper_activity_df = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/TF_activities/diff_activities.csv',sep='\t',index_col=0)
 ae_activity_df = pd.read_csv('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/shallow_shallow/ensemble_activities.csv',sep='\t',index_col=0) 
 id_to_kotf = pd.read_pickle('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/shallow_shallow/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/fold0_cycle0/ko_activities_cycle0_fold0/knocktf_sample_to_tf.pkl')
-id_to_kotf = id_to_kotf.set_index('Sample_ID')
+#id_to_kotf = id_to_kotf.set_index('Sample_ID')
+"""
 info_df = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/info.csv',sep='\t',index_col=0).set_index('sample_id')
 print(info_df)
 
-viper_activity_df = viper_activity_df.drop_duplicates()
+viper_activity_df = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/TF_activities/VIPERdiff_activities.csv',sep='\t',index_col=0)
+scenic_activity_df = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/TF_activities/SCENICdiff_activities.csv',sep='\t',index_col=0)
+id_to_kotf = pd.read_pickle('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/shallow_shallow/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/fold0_cycle0/ko_activities_cycle0_fold0/knocktf_sample_to_tf.pkl')
+id_to_kotf = id_to_kotf.set_index('Sample_ID')
+s_s_ensemble = pd.read_csv('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/shallow_shallow/ensemble_activities.csv',sep='\t',index_col=0)
+fc_g_ensemble = pd.read_csv('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/fc_g/ensemble_activities.csv',sep='\t',index_col=0)
+
+def consensus(act_list):
+    tfs = set(act_list[0].columns)
+    for df in act_list:
+        tfs = tfs.intersection(set(df.columns))
+    tfs = list(tfs)
+    tfs.sort()
+    consensus_arr = []
+    for df in act_list:
+        df = df.loc[:,tfs]
+        df = df.sort_index(axis=0)
+        df = ((df.T - df.T.mean())/df.T.std()).T
+        consensus_arr.append(np.array([df.to_numpy()]))
+    consensus_arr = np.vstack(consensus_arr)
+    consensus = consensus_arr.mean(axis=0)
+    consensus_df = pd.DataFrame(consensus, columns=tfs,index=act_list[0].index)
+    return consensus_df
+
+viper_s_s_consensus = consensus([s_s_ensemble,viper_activity_df])
+
+#viper_activity_df = viper_activity_df.drop_duplicates()
 
 viper_rank_df = viper_activity_df.rank(axis=1)
-ae_rank_df = ae_activity_df.rank(axis=1)
+s_s_rank_df = s_s_ensemble.rank(axis=1)
+fc_g_rank_df = fc_g_ensemble.rank(axis=1)
+scenic_rank_df = scenic_activity_df.rank(axis=1)
+v_s_s_rank_df = viper_s_s_consensus.rank(axis=1)
+
 viper_rank_df = viper_rank_df/viper_rank_df.max()
-ae_rank_df = ae_rank_df/ae_rank_df.max()
+s_s_rank_df = s_s_rank_df/s_s_rank_df.max()
+fc_g_rank_df = fc_g_rank_df/fc_g_rank_df.max()
+scenic_rank_df = scenic_rank_df/scenic_rank_df.max()
+v_s_s_rank_df = v_s_s_rank_df/v_s_s_rank_df.max()
 
 ko_tf_rank_dict = {}
 ko_tf_activity_dict = {}
 for i,row in viper_rank_df.iterrows():
     tf = id_to_kotf.loc[i,'TF']
-    viper_ranking = viper_rank_df[tf].loc[i]
-    ae_ranking = ae_rank_df[tf].loc[i]
-    viper_act = viper_activity_df[tf].loc[i]
-    ae_act = ae_activity_df[tf].loc[i]
-    ko_tf_rank_dict[i] = [viper_ranking,ae_ranking]
-    ko_tf_activity_dict[i] = [viper_act,ae_act]
 
-ko_tf_df = pd.DataFrame(ko_tf_rank_dict).T.rename(columns={0:'viper',1:'ae'})
+    viper_ranking = viper_rank_df[tf].loc[i]
+    s_s_ranking = s_s_rank_df[tf].loc[i]
+    fc_g_ranking = fc_g_rank_df[tf].loc[i]
+    scenic_ranking = scenic_rank_df[tf].loc[i]
+    v_s_s_ranking = v_s_s_rank_df[tf].loc[i]
+
+    ko_tf_rank_dict[i] = [s_s_ranking,fc_g_ranking,viper_ranking,scenic_ranking,v_s_s_ranking]
+
+ko_tf_df = pd.DataFrame(ko_tf_rank_dict).T.rename(columns={0:'S-S',1:'FC-G',2:'viper',3:'AUCell',4:'viper-S-S Consensus'})
+
+
+#melt_ko_tf_df = pd.melt(ko_tf_df,value_vars=ko_tf_df.columns,value_name='method',var_name='ranking')
+#print(melt_ko_tf_df)
+plt.clf()
+fig,ax = plt.subplots(5,1,figsize=(5,9),sharey=True,sharex=True)
+fig.subplots_adjust(left=0.1,bottom=0.2,right=0.9,top=0.8,wspace=0.35,hspace=0.4)
+for i,method in enumerate(ko_tf_df.columns):
+    a = ax[i]
+    #sns.violinplot(x='method',y='ranking',data=melt_ko_tf_df,color='w')
+    sns.distplot(ko_tf_df[method],kde=True,hist=True,ax=a,bins=6)
+    a.set_title(method)
+    a.set_xlabel('Ranking')
+    #sns.swarmplot(x='method',y='ranking',data=melt_ko_tf_df)
+fig.savefig('method_rank_boxplot.png')
+raise ValueError()
+
+"""
 ko_tf_act_df = pd.DataFrame(ko_tf_activity_dict).T.rename(columns={0:'viper',1:'ae'})
 print(ko_tf_df)
 info_df = info_df.loc[ko_tf_df.index,:]
@@ -72,6 +127,7 @@ for sample in ko_tf_df.index:
 
 info_ko_tf_df['KO_TF'] = tfs
 print(ko_tf_df)
+"""
 
 """
 fig,ax = plt.subplots()

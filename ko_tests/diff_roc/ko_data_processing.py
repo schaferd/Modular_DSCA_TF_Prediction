@@ -53,6 +53,7 @@ class ActivityInput():
 
     def get_sample(self,data_path):
         data = self.get_list_from_file(data_path)
+        exp = data_path.split('/')[-1].split('_')[1]
         pert_tf = data_path.split('/')[-1].split('_')[0]
         gene_expression_dict = {}
         gene_list = []
@@ -71,7 +72,7 @@ class ActivityInput():
                                 gene_set.add(g)
         
         ordered_exp = [gene_expression_dict[g] for g in gene_list]
-        df = pd.DataFrame([ordered_exp],columns=gene_list,index=[pert_tf])
+        df = pd.DataFrame([ordered_exp],columns=gene_list,index=[exp+'_'+pert_tf])
         #df = df.apply(stats.zscore,axis=1)
         return df
 

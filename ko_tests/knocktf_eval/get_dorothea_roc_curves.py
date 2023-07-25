@@ -12,21 +12,37 @@ from pyensembl import EnsemblRelease
 ensembl_data = EnsemblRelease(78)
 
 class getROCCurve():
-    def __init__(self,activity_dir):
+    def __init__(self,activity_dir,match):
         self.activity_dir = activity_dir
-        self.activity_files = [f for f in os.listdir(self.activity_dir) if os.path.isfile('/'.join([self.activity_dir,f])) and "TFactivities_" in f]
+        self.activity_files = [f for f in os.listdir(self.activity_dir) if (os.path.isfile('/'.join([self.activity_dir,f])) and match in f) and "diff_activities" not in f]
 
-        exp_ids = {f:'_'.join((f.split('.')[0]).split('_')[1:4]) for f in self.activity_files }
-        tf = {f: f.split('.')[1] for f in self.activity_files}
+        #KNOCKTF
+        #exp_ids = {f:'_'.join((f.split('.')[0]).split('_')[2:5]) for f in self.activity_files }
+
+        #DOROTHEA BENCHMARK
+        exp_ids = {f:'_'.join((f.split('.')[0]).split('_')[2:4]) for f in self.activity_files }
+
+        #KNOCKTF
+        #tf = {f: f.split('.')[1] for f in self.activity_files}
+
+        #DOROTHEA BENCHMARK
+        tf = {f: f.split('.')[0].split('_')[2] for f in self.activity_files}
+
         self.id_to_tf = {exp_ids[f]:tf[f] for f in self.activity_files}
         #self.activity_files = {'.'.join(f.split('.')[:2]):f for f in os.listdir(viper_activity_dir) if os.path.isfile('/'.join([viper_activity_dir,f])) and 'viper_pred.csv' in f}
         #activity_dir = viper_activity_dir
         self.activities = {f:self.load_activity_file('/'.join([self.activity_dir,f]),exp_ids[f])  for f in self.activity_files}
 
-        self.control_activities = self.aggregate_matrix({f:self.activities[f] for f in self.activities.keys() if 'control' in f})
-        self.treated_activities = self.aggregate_matrix({f:self.activities[f] for f in self.activities.keys() if 'treated' in f}).loc[self.control_activities.index,:]
+        #KNOCKTF
+        #self.control_activities = self.aggregate_matrix({f:self.activities[f] for f in self.activities.keys() if 'control' in f})
+        #self.treated_activities = self.aggregate_matrix({f:self.activities[f] for f in self.activities.keys() if 'treated' in f}).loc[self.control_activities.index,:]
+
+        #DOROTHEA BENCHMARK
+        self.control_activities = self.aggregate_matrix({f:self.activities[f] for f in self.activities.keys() if 'positive' in f})
+        self.treated_activities = self.aggregate_matrix({f:self.activities[f] for f in self.activities.keys() if 'negative' in f}).loc[self.control_activities.index,:]
+
         self.diff_activities = self.control_activities - self.treated_activities
-        self.diff_activities.to_csv(activity_dir+'/diff_activities.csv',sep='\t')
+        self.diff_activities.to_csv(activity_dir+'/'+match+'diff_activities.csv',sep='\t')
 
         #self.aggregate_activities = self.aggregate_matrix()
         #self.aggregate_activities.T.to_csv(activity_dir+'/agg_activities.csv',sep='\t')
@@ -38,7 +54,8 @@ class getROCCurve():
 
 
     def load_activity_file(self,activity_file,exp_id):
-        df = pd.read_csv(activity_file,index_col=0)
+        df = pd.read_csv(activity_file)
+        df.index = [exp_id]
         return df
 
     def aggregate_matrix(self,activities):
@@ -50,11 +67,9 @@ class getROCCurve():
     def rank_matrix(self,df):
         #ranked_matrix = self.aggregate_activities.rank(axis = 1,method='min',na_option='keep',ascending='False')
         #scaled_rank_matrix = ranked_matrix/ranked_matrix.max(axis=0)
-        print(df)
         return df.rank(axis=1)/df.shape[0]
 
     def get_perturbation_info(self):
-        print(self.scaled_rankings)
         tfs = self.scaled_rankings.columns
         self.scaled_rankings = self.scaled_rankings.reset_index(names='Sample_ID')
         rank_df = pd.melt(self.scaled_rankings,id_vars=['Sample_ID'],value_vars=tfs,value_name='scaled ranking',var_name='TF',ignore_index=False)
@@ -83,7 +98,6 @@ class getROCCurve():
         df_tf_of_interest['is tf perturbed'] = (df_tf_of_interest['TF'] == df_tf_of_interest['perturbed tf'])
         #df_tf_of_interest.fillna(0,inplace=True)
         df_tf_of_interest.dropna(inplace=True)
-        print(df_tf_of_interest)
         return df_tf_of_interest
 
     def get_roc(self):
@@ -162,9 +176,17 @@ def get_knowledge(knowledge_path,overlap_set):
 if __name__ == '__main__':
     #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/TF_activities_dorothea_relconn10/'
     #activity_dir = '/nobackup/users/schaferd/ae_project_data/encode_ko_data/dorothea_activities/'
-    activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/treated_rank_filtered/viper_data/viper_activities_0.1/'
+
+    #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/TF_activities'
+    activity_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/diff_TF_activities'
+
     #activity_dir = '/nobackup/users/schaferd/ae_project_data/ko_data/sample_tf_activities/'
-    obj = getROCCurve(activity_dir)
+    VIPER_obj = getROCCurve(activity_dir,'VIPER')
+    #decoupleR_obj = getROCCurve(activity_dir,'decoupleR')
+    #SCENIC_obj = getROCCurve(activity_dir,'SCENIC')
+
+    #print("viper",VIPER_obj.auc)
+    #print("decoupleR",decoupleR_obj.auc)
     """
     embedding_path = '/nobackup/users/schaferd/ae_project_outputs/vanilla/moa_tests_epochs100_batchsize256_edepth2_ddepth2_lr1e-05_lrsched_moa0.1_7-19_18.36.45/model_encoder_fold0.pth'
     data_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/contrasts/'

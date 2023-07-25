@@ -5,7 +5,7 @@
 
 module load cuda/10.2
 HOME2=/nobackup/users/$(whoami)
-PYTHON_VIRTUAL_ENVIRONMENT=ae_train3
+PYTHON_VIRTUAL_ENVIRONMENT=ae_train
 CONDA_ROOT=$HOME2/anaconda3
 source ${CONDA_ROOT}/etc/profile.d/conda.sh
 conda activate $PYTHON_VIRTUAL_ENVIRONMENT
