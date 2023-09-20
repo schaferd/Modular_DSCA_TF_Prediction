@@ -14,8 +14,10 @@ id_tf_dict = id_tf.to_dict(orient='list')
 sample_to_tf = {i: id_tf_dict[i][0] for i in id_tf_dict}
 tf_to_sample = {id_tf_dict[i][0]:i for i in id_tf_dict}
 
-control_df = pd.read_csv("control.csv",sep='\t',index_col=0)
-treat_df = pd.read_csv("treated.csv",sep='\t',index_col=0)
+#control_df = pd.read_csv("control.csv",sep='\t',index_col=0)
+#treat_df = pd.read_csv("treated.csv",sep='\t',index_col=0)
+control_df = pd.read_pickle("control_nan_ko0.pkl")
+treat_df = pd.read_pickle("treated_nan_ko0.pkl")
 input_genes = '/nobackup/users/schaferd/ae_project_data/hdf_gene_expression_data/gene_input_data.pkl'
 input_genes = pd.read_pickle(input_genes)
 
@@ -120,6 +122,10 @@ control_df, treat_df = filter_if_relevant(control_df,treat_df)
 
 #treat_df.to_csv("filtered_data/relevant_data/treated_relevant_samples.csv",sep='\t')
 #control_df.to_csv("filtered_data/relevant_data/control_relevant_samples.csv",sep='\t')
+
+treat_df.to_pickle("filtered_data/relevant_data/treated_nan_ko0.pkl")
+control_df.to_pickle("filtered_data/relevant_data/control_nan_ko0.pkl")
+raise ValueError()
 
 #treat_df.to_csv("filtered_data/fc_filtered/filtered_treated_"+str(FILTER_CUTOFF)+".csv", sep='\t')
 #control_df.to_csv("filtered_data/fc_filtered/filtered_control_"+str(FILTER_CUTOFF)+".csv",sep='\t')

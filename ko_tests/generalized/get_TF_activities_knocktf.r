@@ -1,13 +1,10 @@
 library(tidyverse)
 library(decoupleR)
 
-
-
 ### Create an output folder-------------------------------------------------
-outFolder <- paste0('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/KOfilteredPKN_output_',file.path(format(Sys.time(), "%F %H-%M")))
-#outFolder <- paste0('/nobackup/users/schaferd/ae_project_data/encode_ko_data/KOfilteredPKN_output_',file.path(format(Sys.time(), "%F %H-%M")))
-#outFolder <- '/nobackup/users/schaferd/ae_project_data/ko_data/KOfilteredPKN_output_TFActivities/'
+outFolder <- paste0('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/KOfilteredPKN_output_',file.path(format(Sys.time(), "%F_%H-%M")))
 dir.create(outFolder)
+data_path <- '/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/ko0_samples/'
 
 
 ### Read prior knowledge net------------------------------------------------
@@ -15,8 +12,7 @@ pkn <- read.delim('/nobackup/users/schaferd/ae_project_data/dorothea_tf_gene_rel
 
 
 ### Load list of files and get unique KOed TFs from the names----------------
-files <- list.files('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/samples/')
-#files <- list.files('/nobackup/users/schaferd/ae_project_data/encode_ko_data/ko_datafiles/')
+files <- list.files(data_path)
 tfs_koed <- NULL
 for (i in 1:length(files)){
   file <- files[i]
@@ -38,23 +34,20 @@ print(pkn_tfs)
 minNrOfGenes = 10 
 settings = list(verbose = F, minsize = minNrOfGenes)
 for (file in files){
-  gex <- data.table::fread(paste0('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/samples/',file),header = T) %>% column_to_rownames('Sample_ID')
-  #gex <- data.table::fread(paste0('/nobackup/users/schaferd/ae_project_data/encode_ko_data/ko_datafiles/',file),header = T) %>% column_to_rownames('Sample_ID')
+  gex <- data.table::fread(paste0(data_path,file),header = T) %>% column_to_rownames('Sample_ID')
   gex <- rbind(gex,gex)
-  print(gex)
-  stop("hello")
 
-  #VIPER_TF_activities = run_viper(t(gex), pkn_filtered,.source='tf',.target='target',.mor='mor',minsize=minNrOfGenes)
+  VIPER_TF_activities = run_viper(t(gex), pkn_filtered,.source='tf',.target='target',.mor='mor',minsize=minNrOfGenes)
   #decoupleR_TF_activities = decouple(t(gex),pkn_filtered,.source='tf',.target='target',minsize=minNrOfGenes)
   SCENIC_TF_activities = run_aucell(t(gex),pkn_filtered,.source='tf',.target='target',minsize=minNrOfGenes)
 
   #decoupleR_TF_activities <- decoupleR_TF_activities %>% filter(statistic=='consensus') %>% pivot_wider_profile(id_cols=source, names_from=condition,values_from=score) %>% as.data.frame()
   #decoupleR_TF_activities <- decoupleR_TF_activities %>% t() %>% as.data.frame()
 
-  #VIPER_TF_activities <- VIPER_TF_activities %>% select(source,condition,score) %>% spread('source','score') %>% column_to_rownames('condition')
+  VIPER_TF_activities <- VIPER_TF_activities %>% select(source,condition,score) %>% spread('source','score') %>% column_to_rownames('condition')
   SCENIC_TF_activities <- SCENIC_TF_activities %>% select(source,condition,score) %>% spread('source','score') %>% column_to_rownames('condition')
 
   #write_csv(decoupleR_TF_activities[1,],paste0(outFolder,'/decoupleR_TFactivities_',file),append=FALSE,col_names=TRUE)
-  #write_csv(VIPER_TF_activities[1,],paste0(outFolder,'/VIPER_TFactivities_',file),append=FALSE,col_names=TRUE)
+  write_csv(VIPER_TF_activities[1,],paste0(outFolder,'/VIPER_TFactivities_',file),append=FALSE,col_names=TRUE)
   write_csv(SCENIC_TF_activities[1,],paste0(outFolder,'/SCENIC_TFactivities_',file),append=FALSE,col_names=TRUE)
 }

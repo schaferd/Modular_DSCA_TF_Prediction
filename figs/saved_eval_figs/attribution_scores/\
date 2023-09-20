@@ -1,0 +1,111 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+import sys
+from pyensembl import EnsemblRelease
+ensembl_data = EnsemblRelease(78)
+
+base_path = '/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/'
+fc_g_path = [base_path+'/fc_g/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.56/',base_path+'/fc_g/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.31/']
+input_genes = pd.read_pickle(base_path+'/fc_g/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.31/fold0_cycle0/ko_activities_cycle0_fold0/input_genes.pkl')
+
+pknAB = pd.read_csv('pknAB.csv',sep='\t')
+pknCD = pd.read_csv('pknCD.csv',sep='\t')
+print(pknAB)
+
+fc_g_attr_files = []
+
+for path in fc_g_path:
+    fold_paths = []
+    fold_paths = fold_paths+[path+'/'+p for p in os.listdir(path) if 'fold' in p]
+    act_path = []
+    for p in fold_paths:
+        act_path = act_path + [p+'/'+i for i in os.listdir(p) if 'ko_activities' in i]
+        for p2 in act_path:
+            fc_g_attr_files = fc_g_attr_files+[p2+'/'+f for f in os.listdir(p2) if 'tf_attr_dict.pkl' in f]
+
+#FOR MULTIPLE RUNS
+"""
+attr_dicts = [pd.read_pickle(f) for f in fc_g_attr_files]
+"""
+
+#FOR JUST ONE RUN
+attr_dicts = [pd.read_pickle(f) for f in [fc_g_attr_files[0]]]
+
+tf_attr_dict = {}
+for model_attr in attr_dicts:
+    for tf in model_attr.keys():
+        if tf not in tf_attr_dict:
+            #FOR MULTIPLE RUNS
+            #tf_attr_dict[tf] = [np.array([model_attr[tf]])]
+
+            #FOR JUST ONE RUN
+            tf_attr_dict[tf] = np.array(model_attr[tf])
+        else:
+            print("hello")
+            tf_attr_dict[tf].append(np.array([model_attr[tf]]))
+
+"""
+#tf_attr_dict = {tf:np.vstack(tf_attr_dict[tf]) for tf in tf_attr_dict.keys()}
+#tf_attr_mean_dict = {tf:np.mean(np.mean(tf_attr_dict[tf],axis=0),axis=0) for tf in tf_attr_dict.keys()}
+attr_df = pd.DataFrame(tf_attr_mean_dict,index=input_genes)
+"""
+
+#FOR JUST ONE RUN
+tf_attr_mean_dict = {tf:np.mean(tf_attr_dict[tf],axis=0) for tf in tf_attr_dict.keys()}
+attr_df = pd.DataFrame(tf_attr_mean_dict,index=input_genes)
+###
+
+#find TF in AB pkn of interest (TF with the most connections)
+pknAB_tfs = list(set(pknAB['source']))
+tf_with_most_genes = None
+no_of_genes_of_tf_with_most_genes = 0
+for tf in pknAB_tfs:
+    no_of_genes = len(pknAB[pknAB['source'] == tf])
+    if no_of_genes > no_of_genes_of_tf_with_most_genes:
+        no_of_genes_of_tf_with_most_genes = no_of_genes
+        tf_with_most_genes = tf
+
+gene_to_ensembl = {}
+ensembl_to_gene = {}
+
+for g in attr_df.index:
+        try:
+                gene_id = ensembl_data.gene_name_of_gene_id(g)
+                gene_to_ensembl[gene_id] = g 
+                ensembl_to_gene[g] = gene_id
+        except:
+                ensembl_to_gene[g] = None
+
+gene_name_input_genes = [ensembl_to_gene[g] for g in input_genes]
+attr_df = attr_df.rename(index=ensembl_to_gene)
+
+print(no_of_genes_of_tf_with_most_genes)
+#Get AB and CD PKN TF relationship genes
+ABgenes = pknAB[pknAB['source'] == tf_with_most_genes]['target']
+CDgenes = pknCD[pknCD['source'] == tf_with_most_genes]['target']
+CDgenes = list(set(CDgenes).intersection(set(gene_name_input_genes)))
+ABgenes = list(set(ABgenes).intersection(set(gene_name_input_genes)))
+print(len(ABgenes))
+print(len(CDgenes))
+other = (set(input_genes) - set(ABgenes)) - set(CDgenes)
+
+print(attr_df.shape)
+
+confidence_groups = {'AB':attr_df.loc[tf_with_most_genes,ABgenes],'CD':attr_df.loc[tf_with_most_genes,CDgenes],'Other':attr_df.loc[tf_with_most_genes,other]}
+
+
+
+plt.clf()
+fig,ax = plt.subplots(3,1,figsize=(5,9),sharey=True,sharex=True)
+fig.subplots_adjust(left=0.1,bottom=0.2,right=0.9,top=0.8,wspace=0.35,hspace=0.4)
+for c in confidence_groups.keys():
+    sns.distplot(confidence_groups[c],kde=True,hist=True,ax=a,bins=6)
+
+fig.savefig('tf_hist.png')
+
+    
+
+

@@ -20,12 +20,16 @@ class ActivityInput():
         self.positive_samples.sort()
 
         pos_df,neg_df = self.get_pos_neg_matrices()
-        pos_df.to_csv(self.data_dir+'/pos_df.csv')
-        neg_df.to_csv(self.data_dir+'/neg_df.csv')
+        #pos_df.to_csv(self.data_dir+'/pos_df.csv')
+        #neg_df.to_csv(self.data_dir+'/neg_df.csv')
+        pos_df.to_pickle(self.data_dir+'/pos_df_nan_ko0.pkl')
+        neg_df.to_pickle(self.data_dir+'/neg_df_nan_ko0.pkl')
+
 
 
 
     def get_pos_neg_matrices(self):
+        """
         pos_df = None
         neg_df = None
         for i,pos in enumerate(self.positive_samples):
@@ -37,15 +41,36 @@ class ActivityInput():
             else:
                 pos_df = pd.concat([pos_df,pos],ignore_index=False) #ignore_index=True, join='inner')
                 neg_df = pd.concat([neg_df,neg],ignore_index=False) #ignore_index=True,join='inner')
+        """
+        pos_dfs = []
+        neg_dfs = []
+        for i,pos in enumerate(self.positive_samples):
+            neg = self.get_sample(self.negative_samples[i])
+            pos = self.get_sample(pos)
+            pos_dfs.append(pos)
+            neg_dfs.append(neg)
 
-        pos_df = pos_df.fillna(0)
-        neg_df = neg_df.fillna(0)
+        pos_df = pd.concat(pos_dfs,ignore_index=False)
+        neg_df = pd.concat(neg_dfs,ignore_index=False)
+        
+        print(pos_df)
+        for i in pos_df.index:
+            pos_df.loc[i,self.convert_gene_name_to_ensembl(i.split('_')[-1])] = 0
+        for i in neg_df.index:
+            neg_df.loc[i,self.convert_gene_name_to_ensembl(i.split('_')[-1])] = 0
+
+        #pos_df = pos_df.fillna(0)
+        #neg_df = neg_df.fillna(0)
 
         pos_neg_df = pd.concat([pos_df,neg_df])
-        pos_neg_df = pos_neg_df.apply(zscore)
+        #pos_neg_df = pos_neg_df.apply(zscore)
+        pos_neg_df = (pos_neg_df-pos_neg_df.mean())/pos_neg_df.std()
 
         pos_df = pos_neg_df.iloc[:len(pos_df.index)]
         neg_df = pos_neg_df.iloc[len(pos_df.index):]
+
+        #pos_df = pos_df.fillna(0)
+        #neg_df = neg_df.fillna(0)
 
         print(pos_df,neg_df)
         return pos_df, neg_df
@@ -96,7 +121,7 @@ class ActivityInput():
 if __name__ == '__main__':
     #def __init__(self,embedding_path,data_dir,knowledge_path,overlap_genes_path,ae_input_genes,tf_list_path):
     #embedding_path = '/nobackup/users/schaferd/ae_project_outputs/vanilla/get_model_info_epochs3_batchsize128_edepth2_ddepth2_lr0.0001_6-23_13.31.0/model_encoder_fold0.pth'
-    data_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/'
+    data_dir = '/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/'
     ae_input_genes = '/nobackup/users/schaferd/ko_eval_data/ae_data/input_genes.pkl'
     tf_list_path = '/nobackup/users/schaferd/ko_eval_data/ae_data/embedding_tf_names.pkl'
     obj = ActivityInput(data_dir,ae_input_genes)

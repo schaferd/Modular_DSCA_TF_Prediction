@@ -21,7 +21,7 @@ make_model_boxplots(f,label_font_size,title_font_size,subtitle_font_size)
 
 subfigs2 = subfigs1[1].subfigures(2,1)
 
-create_moa_fig(subfigs2[0],label_font_size,title_font_size,subtitle_font_size)
+#create_moa_fig(subfigs2[0],label_font_size,title_font_size,subtitle_font_size)
 create_const_figs(subfigs2[1],label_font_size,title_font_size,subtitle_font_size)
 
 fig.savefig('figure2.png',bbox_inches='tight',dpi=300)

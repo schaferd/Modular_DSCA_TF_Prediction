@@ -87,13 +87,10 @@ rna_seq_control.columns = rna_seq_control.columns.droplevel()
 microarray_treated.columns = microarray_treated.columns.droplevel()
 rna_seq_treated.columns = rna_seq_treated.columns.droplevel()
 
-rna_seq = pd.concat([rna_seq_control,rna_seq_treated],axis=0).fillna(0)
-microarray = pd.concat([microarray_control,microarray_treated],axis=0).fillna(0)
-
-values = rna_seq.to_numpy().flatten()
-plt.hist(values)
-plt.savefig('ko_data_values_hist.png')
-raise ValueError()
+#rna_seq = pd.concat([rna_seq_control,rna_seq_treated],axis=0).fillna(0)
+#microarray = pd.concat([microarray_control,microarray_treated],axis=0).fillna(0)
+rna_seq = pd.concat([rna_seq_control,rna_seq_treated],axis=0)
+microarray = pd.concat([microarray_control,microarray_treated],axis=0)
 
 rna_seq = zscore(rna_seq)
 microarray = zscore(microarray)
@@ -102,12 +99,14 @@ overlap_genes = list(set(input_genes).intersection(microarray.columns))
 overlap_genes.sort()
 temp_df = pd.DataFrame(columns=input_genes)
 microarray = microarray.loc[:,overlap_genes]
-microarray = pd.concat([temp_df,microarray],axis=0).fillna(0)
+#microarray = pd.concat([temp_df,microarray],axis=0).fillna(0)
+microarray = pd.concat([temp_df,microarray],axis=0)
 
 overlap_genes = list(set(input_genes).intersection(set(rna_seq.columns)))
 overlap_genes.sort()
 rna_seq = rna_seq.loc[:,overlap_genes]
-rna_seq = pd.concat([temp_df,rna_seq],axis=0).fillna(0)
+#rna_seq = pd.concat([temp_df,rna_seq],axis=0).fillna(0)
+rna_seq = pd.concat([temp_df,rna_seq],axis=0)
 
 print("microarray")
 print(microarray)
@@ -124,8 +123,10 @@ print(rna_seq_control)
 print("rnq seq treated")
 print(rna_seq_treated)
 
-control_df = pd.concat([microarray_control,rna_seq_control],axis=0).fillna(0)
-treat_df = pd.concat([microarray_treated,rna_seq_treated],axis=0).fillna(0)
+#control_df = pd.concat([microarray_control,rna_seq_control],axis=0).fillna(0)
+#treat_df = pd.concat([microarray_treated,rna_seq_treated],axis=0).fillna(0)
+control_df = pd.concat([microarray_control,rna_seq_control],axis=0)
+treat_df = pd.concat([microarray_treated,rna_seq_treated],axis=0)
 
 print("control")
 print(control_df)
@@ -133,9 +134,12 @@ print(control_df)
 print("treated")
 print(treat_df)
 
+treat_df.to_pickle("treated_nan.pkl")
+control_df.to_pickle("control_nan.pkl")
+raise ValueError()
 
-treat_df.to_csv("treated.csv", sep='\t')
-control_df.to_csv("control.csv",sep='\t')
+#treat_df.to_csv("treated.csv", sep='\t')
+#control_df.to_csv("control.csv",sep='\t')
 
 treat_overlap = list(set(ensembl_to_gene.keys()).intersection(set(treat_df.columns)))
 control_overlap = list(set(ensembl_to_gene.keys()).intersection(set(control_df.columns)))

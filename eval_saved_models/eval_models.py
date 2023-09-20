@@ -91,7 +91,7 @@ class EvalModels():
         plt.title(self.encoder+' '+self.decoder)
         plt.savefig(self.out_dir+"auc_vs_ko_rank.png")
 
-    def run_ko_tests(self,ko_data_path,control="control.csv",treated="treated.csv",attribution=False):
+    def run_ko_tests(self,ko_data_path,control="control.csv",treated="treated.csv",attribution=False,recon_corr=False):
         auc_dict = {}
         aucs = []
         average_activities = None
@@ -123,6 +123,11 @@ class EvalModels():
             if attribution:
                 control_attr = m.get_attribution(ko_data_path+control,new_path,pickle=False)
                 treated_attr = m.get_attribution(ko_data_path+treated,new_path,pickle=False)
+            
+            if recon_corr:
+                pd.to_pickle(m.get_reconstruction(ko_data_path+control,pickle=False)[-1],new_path+'knocktf_recon_corr_control.pkl')
+                pd.to_pickle(m.get_reconstruction(ko_data_path+treated,pickle=False)[-1],new_path+'knocktf_recon_corr_treated.pkl')
+
 
         average_activities = average_activities / df_counter
         average_activities.to_csv(self.out_dir+'ensemble_activities.csv',sep='\t')
@@ -136,7 +141,7 @@ class EvalModels():
 
         return ko_obj.auc, aucs
 
-    def run_pert_tests(self,ko_data_path):
+    def run_pert_tests(self,ko_data_path,recon_corr=False):
         auc_dict = {}
         average_activities = None
         df_counter = 0
@@ -162,6 +167,10 @@ class EvalModels():
                 auc_dict[model_type] = [auc]
             else:
                 auc_dict[model_type].append(auc)
+
+            if recon_corr:
+                pd.to_pickle(m.get_reconstruction(ko_data_path+'pos_df.csv',pickle=False,csv=True)[-1],new_path+'dorothea_recon_corr_control.pkl')
+                pd.to_pickle(m.get_reconstruction(ko_data_path+'neg_df.csv',pickle=False,csv=True)[-1],new_path+'dorothea_recon_corr_treated.pkl')
         average_activities = average_activities / df_counter
         average_activities.to_csv(self.out_dir+'dorothea_ensemble_activities.csv',sep='\t')
         print(average_activities)
@@ -188,7 +197,7 @@ class EvalModels():
     def get_avg_missing_expression(self,input_data_path):
         new_input_dfs = []
         for m in self.models:
-            new_input_data = m.infer_missing_gene_expression(input_data_path)
+            new_input_data = m.infer_missing_gene_expression(input_data_path=input_data_path)
             new_input_dfs.append(new_input_data)
 
         new_input_np = np.vstack([[df.to_numpy()] for df in new_input_dfs])
@@ -280,8 +289,41 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     params = {
-        "model_dirs":['/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.31/','/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.56/'],
-        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/','/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_14.26.53/'],
+        #FINAL EVAL FC-G
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.31/','/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.56/'],
+        #FINAL EVAL S-S
+        "model_dirs":['/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/','/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_14.26.53/'],
+
+
+        #MODEL SEARCH 
+        #FC-FC
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/model_eval/save_model_fc-fc_epochs100_batchsize128_enlr0.0001_delr0.0001_moa1.0_rel_conn10_5-31_17.51.41/'],
+        #FC-G
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/model_eval/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_5-31_17.52.2/'],
+        #FC-S
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/model_eval/save_model_fc-shallow_epochs100_batchsize128_enlr0.0001_delr0.001_moa1.0_rel_conn10_5-31_17.52.35/'],
+
+        #S-FC
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/model_eval/save_model_shallow-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_6-1_10.42.8/'],
+        #S-G
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/model_eval/save_model_shallow-genefc_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_6-1_10.42.44/'],
+        #S-S
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/model_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_6-1_10.43.21/'],
+
+        #T-FC
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/model_eval/save_model_tffc-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_5-31_17.54.10/'],
+        #T-G
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/model_eval/save_model_tffc-genefc_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_5-31_23.34.32/'],
+        #T-S
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/model_eval/save_model_tffc-shallow_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_6-1_10.41.11/'],
+
+
+        #MOA TEST
+        #FC-G
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/moa_tests/saved_moa_test_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_7-31_10.22.55/','/nobackup/users/schaferd/ae_project_outputs/moa_tests/saved_moa_test_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_rel_conn10_7-31_10.23.3/'],
+
+
+
         "encoder_depth":args.encoder_depth,
         "decoder_depth":args.decoder_depth,
         "train_data":args.train_data,
@@ -292,17 +334,28 @@ if __name__ == "__main__":
 
     obj = EvalModels(params)
     #obj.create_rank_freq_heatmaps('/nobackup/users/schaferd/drug_perturb_data/belinostat_dexamethasone_A549/untreated/samples.pkl','/nobackup/users/schaferd/drug_perturb_data/belinostat_dexamethasone_A549/belinostat_treated/samples.pkl')
-    #obj.run_ko_tests("/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/",'control_relevant_samples.csv','treated_relevant_samples.csv',attribution=True)
     #obj.create_performance_vs_ko_rank_curve("/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/fc_filtered/")
     #obj.get_embeddings('/nobackup/users/schaferd/ae_project_data/hdf_gene_expression_data/agg_data.pkl')
     #obj.get_embeddings('/nobackup/users/schaferd/ae_project_data/encode_ko_data/combined_processed_df.pkl')
     #obj.run_ko_tests("/nobackup/users/schaferd/ae_project_data/encode_ko_data/")
+
     #obj.models[0].infer_missing_gene_expression('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/pos_df.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/pos_df.csv')
-    #obj.get_avg_missing_expression('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/pos_df.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/pos_df.csv')
-    #obj.get_avg_missing_expression('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.csv')
-    #obj.models[0].infer_missing_gene_expression('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.csv')
-    #obj.run_pert_tests("/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/")
-    obj.run_pert_tests("/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/")
+    #obj.get_avg_missing_expression('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/pos_df.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/pos_df.csv')
+    #obj.get_avg_missing_expression('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/neg_df.csv')
+    #obj.models[0].gene_exp_imputation_quality('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.pkl',AE=True,KNN_init=True)
+    #obj.models[0].gene_exp_imputation_quality('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.pkl',AE=True,KNN_init=False)
+    #obj.models[0].gene_exp_imputation_quality('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.pkl',AE=False)
+
+    #obj.models[0].KNN_missing_gene_imputation(input_data_path='/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df_nan.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/neg_df.csv')
+    #obj.models[0].KNN_missing_gene_imputation(input_data_path='/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/pos_df_nan.pkl').to_csv('/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/pos_df.csv')
+
+    #obj.models[0].KNN_missing_gene_imputation(input_data_path='/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/control_nan.pkl').to_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/control_df.csv',sep='\t')
+    #obj.models[0].KNN_missing_gene_imputation(input_data_path='/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/treated_nan.pkl').to_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/treated_df.csv',sep='\t')
+    #obj.run_ko_tests("/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/",'control_df.csv','treated_df.csv',attribution=False,recon_corr=True)
+
+    obj.run_pert_tests("/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/relevant_pos_neg_samples/",recon_corr=True)
+    #obj.run_pert_tests("/nobackup/users/schaferd/ko_eval_data/data/regulons_QC/B1_perturbations/pos_neg_samples/")
+
     #avg_model = obj.get_consensus_model()
     #avg_model.run_ko_tests("/nobackup/users/schaferd/ae_project_data/ko_data/","outputs/")
     

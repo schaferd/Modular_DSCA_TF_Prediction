@@ -8,19 +8,19 @@ from statsmodels.formula.api import ols
 
 #KO ROC AUC DATA
 
-base_path = "/nobackup/users/schaferd/ae_project_outputs/model_eval/"
+base_path = "/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/"
 
-tffc_fc = pd.read_pickle(base_path+"/save_model_tffc-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_5-31_17.54.10/aucs.pkl") 
-tffc_shallow = pd.read_pickle(base_path+"/save_model_tffc-shallow_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_6-1_10.41.11/aucs.pkl")
-tffc_genefc = pd.read_pickle(base_path+"/save_model_tffc-genefc_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_5-31_23.34.32/aucs.pkl")
+tffc_fc = pd.read_pickle(base_path+"/tf_fc/save_model_tffc-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_5-31_17.54.10/aucs.pkl") 
+tffc_shallow = pd.read_pickle(base_path+"/tf_shallow/save_model_tffc-shallow_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_6-1_10.41.11/aucs.pkl")
+tffc_genefc = pd.read_pickle(base_path+"/tf_g/save_model_tffc-genefc_epochs100_batchsize128_enlr0.001_delr0.01_moa1.0_rel_conn10_5-31_23.34.32/aucs.pkl")
 
-shallow_fc = pd.read_pickle(base_path+"/save_model_shallow-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_6-1_10.42.8/aucs.pkl")
-shallow_shallow = pd.read_pickle(base_path+"/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_6-1_10.43.21/aucs.pkl")
-shallow_genefc = pd.read_pickle(base_path+"/save_model_shallow-genefc_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_6-1_10.42.44/aucs.pkl")
+shallow_fc = pd.read_pickle(base_path+"/shallow_fc/save_model_shallow-fc_epochs100_batchsize128_enlr0.001_delr0.0001_moa1.0_rel_conn10_6-1_10.42.8/aucs.pkl")
+shallow_shallow = pd.read_pickle(base_path+"/shallow_shallow/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_6-1_10.43.21/aucs.pkl")
+shallow_genefc = pd.read_pickle(base_path+"/shallow_g/save_model_shallow-genefc_epochs100_batchsize128_enlr0.01_delr0.01_moa1.0_rel_conn10_6-1_10.42.44/aucs.pkl")
 
-fc_fc= pd.read_pickle(base_path+"/save_model_fc-fc_epochs100_batchsize128_enlr0.0001_delr0.0001_moa1.0_rel_conn10_5-31_17.51.41/aucs.pkl")
-fc_shallow = pd.read_pickle(base_path+"/save_model_fc-shallow_epochs100_batchsize128_enlr0.0001_delr0.001_moa1.0_rel_conn10_5-31_17.52.35/aucs.pkl")
-fc_genefc = pd.read_pickle(base_path+"/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_5-31_17.52.2/aucs.pkl")
+fc_fc= pd.read_pickle(base_path+"/fc_fc/save_model_fc-fc_epochs100_batchsize128_enlr0.0001_delr0.0001_moa1.0_rel_conn10_5-31_17.51.41/aucs.pkl")
+fc_shallow = pd.read_pickle(base_path+"/fc_shallow/save_model_fc-shallow_epochs100_batchsize128_enlr0.0001_delr0.001_moa1.0_rel_conn10_5-31_17.52.35/aucs.pkl")
+fc_genefc = pd.read_pickle(base_path+"/fc_g/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_5-31_17.52.2/aucs.pkl")
 
 auc_dict = {'tf_fc':tffc_fc,'tf_shallow':tffc_shallow,'tf_gene':tffc_genefc, 'shallow_fc':shallow_fc, 'shallow_shallow':shallow_shallow, 'shallow_gene':shallow_genefc,'fc_fc':fc_fc,'fc_shallow':fc_shallow,'fc_gene':fc_genefc}
 

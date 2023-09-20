@@ -4,18 +4,20 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-base_path='/nobackup/users/schaferd/ae_project_outputs/moa_tests/'
-moa_dir = base_path+'moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_2-16_16.26.21/'
-no_moa_dir = base_path+'no_moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_rel_conn10_2-16_16.26.54/'
+corr_base_path='/nobackup/users/schaferd/ae_project_outputs/moa_tests/'
 
-moa_l2_dir = base_path+'moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_2-16_8.29.4'
-no_moa_l2_dir = base_path+'no_moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_rel_conn10_2-16_8.29.16'
+auc_base_path='/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/fc_g/'
+moa_dir = 'saved_moa_test_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_7-31_10.22.55/'
+no_moa_dir = 'saved_moa_test_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_rel_conn10_7-31_10.23.3/'
 
-moa_auc = pd.read_pickle(moa_dir+'aucs.pkl')
-no_moa_auc = pd.read_pickle(no_moa_dir+'aucs.pkl')
+#moa_l2_dir = base_path+'moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_2-16_8.29.4'
+#no_moa_l2_dir = base_path+'no_moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_rel_conn10_2-16_8.29.16'
 
-moa_corr = pd.read_pickle(moa_dir+'test_corrs.pkl')
-no_moa_corr = pd.read_pickle(no_moa_dir+'test_corrs.pkl')
+moa_auc = pd.read_pickle(auc_base_path+moa_dir+'aucs.pkl')
+no_moa_auc = pd.read_pickle(auc_base_path+no_moa_dir+'aucs.pkl')
+
+moa_corr = pd.read_pickle(corr_base_path+moa_dir+'test_corrs.pkl')
+no_moa_corr = pd.read_pickle(corr_base_path+no_moa_dir+'test_corrs.pkl')
 
 
 """

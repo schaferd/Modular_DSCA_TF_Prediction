@@ -263,7 +263,7 @@ class Train():
             auc, activity_df, ranked_df, ko_tf_ranks, koed_tfs = get_ko_roc_curve(self.data_obj,self.pert_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
             self.aucs.append(auc)
             print("ko tf ranks",ko_tf_ranks)
-            if self.final_eval:
+            if self.final_eval == True:
                 auc, activity_df, ranked_df, ko_tf_ranks, koed_tfs = get_knocktf_ko_roc_curve(self.data_obj,self.ko_data_path,self.trained_embedding_model,ko_activity_dir,fold=fold_num,cycle=self.cycle)
                 self.knocktf_aucs.append(auc)
                 print("knocktf ko tf ranks",ko_tf_ranks)
@@ -675,7 +675,7 @@ if __name__ == "__main__":
 
         ko_data_path = args.ko_data_path
         pert_data_path = args.pert_data_path
-        final_eval = args.final_eval
+        final_eval = args.final_eval.lower()=='true'
 
         cycles = args.cycles
 

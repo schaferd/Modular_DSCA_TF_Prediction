@@ -1,4 +1,6 @@
 import argparse
+from sklearn.impute import KNNImputer
+from scipy.stats.stats import pearsonr
 import sparselinear
 import gc
 from argparse import RawTextHelpFormatter
@@ -64,13 +66,101 @@ class EvalModel():
         output_dfs = [pd.DataFrame({'TFs':self.data_obj.tfs,'activities':o}) for o in output]
         return output, output_dfs
         
-    def get_reconstruction(self, input_data_path):
-        input_data, input_tensor = self.load_input_data(input_data_path)
+    def get_reconstruction(self, input_data_path,pickle=True,csv=False):
+        input_data, input_tensor = self.load_input_data(input_data_path,csv=csv,pickle=pickle)
         output = self.model(input_tensor).cpu().detach().numpy()
-        output_dfs = [pd.DataFrame({'Genes':self.data_obj.overlap_list,'counts':o}) for o in output]
-        return output, output_dfs
+        output_df = pd.DataFrame(output,columns=self.data_obj.overlap_list,index=input_data.index)
+        corrs = {}
+        for i,row in output_df.iterrows():
+            corrs[i] = pearsonr(input_data.loc[i,:],row)[0]
 
-    def infer_missing_gene_expression(self, input_data_path):
+        return output, output_df, corrs
+
+    def gene_exp_imputation_quality(self,input_data_path, AE=True,KNN_init=False):
+        input_data = pd.read_pickle(input_data_path)
+        temp_df = pd.DataFrame(columns=self.data_obj.input_genes)
+        overlap_genes = list(set(self.data_obj.input_genes).intersection(set(input_data.columns)))
+        input_data = input_data.loc[:,overlap_genes]
+        input_data = pd.concat([pd.DataFrame(columns=self.data_obj.input_genes),input_data],axis=0)
+
+        missing_gene_mask = input_data.notna()
+        missing_gene_mask = missing_gene_mask.replace({True:0,False:1})
+
+        gene_df = np.repeat(np.array([input_data.columns.to_numpy()]),len(input_data.index),axis=0)
+        gene_mask = np.ma.masked_array(gene_df,mask=missing_gene_mask.to_numpy())
+
+        
+        random_missing_genes = []
+        for row in gene_mask:
+            random_missing_genes.append(np.random.choice(row.compressed(),50,replace=False))
+        random_missing_genes = np.array(random_missing_genes)
+
+        missing_data = input_data.copy()
+
+        exp_data = []
+        for i,row_index in enumerate(missing_data.index):
+            missing_genes = random_missing_genes[i]
+            exp_data.append([missing_data.loc[row_index,missing_genes]])
+            missing_data.loc[row_index,missing_genes] = np.nan
+
+        if AE:
+            inferred_data = self.infer_missing_gene_expression(input_data=missing_data,KNN_init=KNN_init)
+        else:
+            inferred_data = self.KNN_missing_gene_imputation(input_data=missing_data)
+
+        inferred = []
+        for i,row_index in enumerate(inferred_data.index):
+            missing_genes = random_missing_genes[i]
+            inferred.append([inferred_data.loc[row_index,missing_genes]])
+
+        inferred = np.array(inferred).flatten()
+        exp_data = np.array(exp_data).flatten()
+
+        corr = pearsonr(inferred,exp_data)
+
+        x = np.arange(-5,4)
+        y = x
+
+        plt.clf()
+        plt.scatter(exp_data,inferred)
+        plt.plot(x,y)
+        plt.xlabel('Expected')
+
+        if AE:
+            plt.ylabel('AE Imputed')
+            if KNN_init:
+                plt.title("ae knn init, exp vs imputed gene expression \n corr:"+str(corr[0]))
+                plt.savefig('ae_knn_init_inferred_scatter.png')
+            else:
+                plt.title("ae exp vs imputed gene expression \n corr:"+str(corr[0]))
+                plt.savefig('ae_inferred_scatter.png')
+        else:
+            plt.ylabel('KNN Imputed')
+            plt.title("knn exp vs imputed gene expression \n corr:"+str(corr[0]))
+            plt.savefig('knn_inferred_scatter.png')
+
+
+    def KNN_missing_gene_imputation(self,input_data=None,input_data_path=None):
+        if input_data is None and input_data_path is None:
+            raise ValueError("Input data path and input data cannot both be None")
+
+        #filter df to only input genes
+        if input_data_path is not None:
+            input_data = pd.read_pickle(input_data_path)
+            temp_df = pd.DataFrame(columns=self.data_obj.input_genes)
+            overlap_genes = list(set(self.data_obj.input_genes).intersection(set(input_data.columns)))
+            input_data = input_data.loc[:,overlap_genes]
+            input_data = pd.concat([pd.DataFrame(columns=self.data_obj.input_genes),input_data],axis=0)
+
+        input_data = input_data.replace(pd.NA,np.nan)
+
+        imputer = KNNImputer(n_neighbors=5,keep_empty_features=True)
+        imputed_gene_expression = imputer.fit_transform(input_data.to_numpy())
+        imputed_gene_expression = pd.DataFrame(imputed_gene_expression, columns=input_data.columns,index=input_data.index)
+        return imputed_gene_expression
+
+
+    def infer_missing_gene_expression(self, input_data=None, input_data_path=None,KNN_init=False):
         """
         Input dataframe should have 
             - NaNs where gene values are missing
@@ -78,31 +168,69 @@ class EvalModel():
             - should be a pickle file
         """
 
+        if input_data is None and input_data_path is None:
+            raise ValueError("Input data path and input data cannot both be None")
+
         #filter df to only input genes
-        input_data = pd.read_pickle(input_data_path)
-        temp_df = pd.DataFrame(columns=self.data_obj.input_genes)
-        overlap_genes = list(set(self.data_obj.input_genes).intersection(set(input_data.columns)))
-        input_data = input_data.loc[:,overlap_genes]
-        input_data = pd.concat([pd.DataFrame(columns=self.data_obj.input_genes),input_data],axis=0)
+        if input_data_path is not None:
+            input_data = pd.read_pickle(input_data_path)
+            temp_df = pd.DataFrame(columns=self.data_obj.input_genes)
+            overlap_genes = list(set(self.data_obj.input_genes).intersection(set(input_data.columns)))
+            input_data = input_data.loc[:,overlap_genes]
+            input_data = pd.concat([pd.DataFrame(columns=self.data_obj.input_genes),input_data],axis=0)
 
         #create mask for missing genes (1 for missing gene, 0 otherwise)
         missing_gene_mask = input_data.notna()
         missing_gene_mask = missing_gene_mask.replace({True:0,False:1})
+        orig_input_data = input_data.fillna(0)
+        
+        if KNN_init:
+            input_data = self.KNN_missing_gene_imputation(input_data=input_data)
+        else:
+            input_data = input_data.fillna(0)
 
-        input_data = input_data.fillna(0)
         input_tensor = torch.tensor(input_data.to_numpy()).float().to(device)
 
         #send data through AE and apply mask
-        output = self.model(input_tensor).cpu().detach().numpy()
-        output_df = pd.DataFrame(output,columns=self.data_obj.input_genes,index=input_data.index)
-        missing_gene_values = missing_gene_mask*output_df
-        missing_gene_values_np = missing_gene_values.to_numpy()
-        print(missing_gene_values_np[np.nonzero(missing_gene_values_np)])
+        prev = None
+        not_converged = True
+        counter = 0
+        while not_converged:
+            input_tensor = self.model(input_tensor)
+            output = input_tensor.cpu().detach().numpy()
+            output_df = pd.DataFrame(output,columns=self.data_obj.input_genes,index=input_data.index)
+            missing_gene_values = missing_gene_mask*output_df
+            missing_gene_values_np = missing_gene_values.to_numpy()
 
-        #add output (with mask applied) to input data, return result
-        new_input_data = input_data.add(missing_gene_values)
+            #add output (with mask applied) to input data, return result
+            new_input_data = orig_input_data.add(missing_gene_values)
+            input_tensor = torch.tensor(new_input_data.to_numpy()).float().to(device)
+
+            if counter%10 == 0 and counter != 0:
+                if prev is not None and self.test_for_convergence(output,prev.to_numpy(),missing_gene_mask,0.99):
+                    not_converged = False
+                    print("counter",counter)
+
+                prev = output_df
+            counter += 1
 
         return new_input_data
+
+    def test_for_convergence(self,curr,prev,mask,threshold):
+        mask = (mask.to_numpy() - 1)*(-1)
+        curr_missing = np.ma.masked_array(curr,mask=mask).compressed()
+        prev_missing = np.ma.masked_array(prev,mask=mask).compressed()
+
+        print("avg diff",np.mean(np.abs(curr_missing-prev_missing)))
+
+        corr = pearsonr(curr_missing,prev_missing)[0]
+        print(corr)
+
+        if corr > threshold:
+            return True
+        return False
+
+
 
     def get_attribution(self, input_data_path, outpath, pickle=True):
         input_data, input_tensor = self.load_input_data(input_data_path,pickle=pickle)
@@ -117,11 +245,14 @@ class EvalModel():
         pd.to_pickle(self.data_obj.input_genes, outpath+'/input_genes.pkl')
         return tf_attr_dict
 
-    def load_input_data(self, input_data_path,pickle=True):
+    def load_input_data(self, input_data_path,csv=False,pickle=True):
         if pickle:
             input_data = pd.read_pickle(input_data_path)
         else:
-            input_data = pd.read_csv(input_data_path,index_col=0,sep='\t')
+            if csv:
+                input_data = pd.read_csv(input_data_path,index_col=0)
+            else:
+                input_data = pd.read_csv(input_data_path,index_col=0,sep='\t')
 
         try:
             input_data = input_data.loc[:,self.data_obj.input_genes]
