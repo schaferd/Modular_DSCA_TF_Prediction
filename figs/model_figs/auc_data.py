@@ -57,6 +57,8 @@ df.decoder = df.decoder.cat.set_categories(dec_sorter)
 df.encoder = df.encoder.astype("category")
 df.encoder = df.encoder.cat.set_categories(enc_sorter)
 
+
+"""
 not_fcfc = tffc_fc+tffc_shallow+tffc_genefc+shallow_fc+shallow_shallow+shallow_genefc+fc_fc+fc_shallow+fc_genefc
 not_fcfc_mean = np.array(not_fcfc).mean()
 print("not fc fc mean",not_fcfc_mean)
@@ -86,8 +88,10 @@ stat,pval = ttest_ind(decoder_sparsity,fc_fc)
 print("decoder sparsity vs. fc-fc",pval)
 stat,pval = ttest_ind(encoder_sparsity,fc_fc)
 print("encoder sparsity vs. fc-fc",pval)
+"""
 
 
+print("AUC")
 #FCFC module performs poorest among all module combinations
 print(df)
 model = ols('AUC ~ C(encoder) + C(decoder) + C(encoder):C(decoder)',data=df).fit()

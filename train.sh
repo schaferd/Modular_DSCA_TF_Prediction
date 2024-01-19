@@ -2,7 +2,7 @@
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH -o /nobackup/users/schaferd/ae_project_outputs/slurm_outputs/modular_out/slurm%j.out
-#SBATCH --mem=128GB
+#SBATCH --mem=100GB
 #SBATCH --gres=gpu:1
 #SBATCH --time=20:00:00
 
@@ -14,7 +14,7 @@ CONDA_ROOT=$HOME2/anaconda3
 source ${CONDA_ROOT}/etc/profile.d/conda.sh
 conda activate $PYTHON_VIRTUAL_ENVIRONMENT
 #ulimit -s unlimited
-module load cuda/10.2
+module load cuda/11.2
 
 cwd=$(pwd)
 

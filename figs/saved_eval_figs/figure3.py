@@ -4,7 +4,7 @@ import sys
 from set_kotf_0_boxplots import plot_ktf_vanilla, plot_dorothea_vanilla
 from ko_tf_rank_scatter import *#knocktf_s_s_viper_scatter, knocktf_fc_g_viper_scatter,knocktf_fc_g_s_s_scatter,dorothea_fc_g_viper_scatter,dorothea_s_s_viper_scatter
 sys.path.insert(1,'attribution_scores/')
-from  attr_score_sum_vs_auc import *#dorothea_comp_other_methods_plot,dorothea_s_s_viper_consensus,dorothea_fc_g_viper_consensus,knocktf_s_s_consensus,knocktf_fc_g_consensus,knocktf_comp_other_methods_plot
+#from  attr_score_sum_vs_auc import *#dorothea_comp_other_methods_plot,dorothea_s_s_viper_consensus,dorothea_fc_g_viper_consensus,knocktf_s_s_consensus,knocktf_fc_g_consensus,knocktf_comp_other_methods_plot
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 """
@@ -47,6 +47,25 @@ dorothea_fc_g_viper_scatter(bottom_ax[3],legend=True,cax=cax)
 #knocktf_s_s_viper_viper_con_scatter(bottom_ax[3],legend=True,cax=cax)
 """
 
+#fig = plt.figure(figsize=(13,5))
+#fig.subplots_adjust(left=0.1,bottom=0.2,right=0.9,top=0.8,wspace=0.2,hspace=0.2)
+#subfigs = fig.subfigures(1,2)
+#subfigs[0].suptitle('Perturbation Validation',fontsize=16)
+#subfigs[1].suptitle('KnockTF Validation',fontsize=16)
+#top_ax = subfigs[0].subplots(1,1,sharey=False,sharex=False)
+#bottom_ax = subfigs[1].subplots(1,1,sharey=False,sharex=False)
+fig, ax = plt.subplots(1,2,sharey=True,figsize=(13,6))
+
+plot_dorothea_vanilla(ax[0],legend=True,ymin=0.48,ymax=0.9)
+#dorothea_comp_other_methods_plot(top_ax[1],legend=True,ymin=0.48,ymax=1)
+#dor_recon_corr_hist(top_ax[2])
+#ktf_recon_corr_hist(bottom_ax[2])
+plot_ktf_vanilla(ax[1],legend=True,ymin=0.48,ymax=0.9)
+#knocktf_comp_other_methods_plot(bottom_ax[1],legend=True,ymin=0.48,ymax=0.7)
+
+fig.savefig('figure3.png',bbox_inches='tight',dpi=300)
+
+"""
 fig = plt.figure(figsize=(18,11))
 fig.subplots_adjust(left=0.1,bottom=0.2,right=0.9,top=0.8,wspace=0.1,hspace=0.2)
 subfigs = fig.subfigures(2,1)
@@ -81,3 +100,4 @@ dorothea_s_s_viper_consensus(top_ax[2],legend=True,ymin=0.48,ymax=1)
 fig.savefig('figure3.png',bbox_inches='tight',dpi=300)
 
 plot_ktf_vanilla(bottom_ax[0])
+"""

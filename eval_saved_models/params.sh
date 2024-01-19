@@ -1,14 +1,14 @@
 
 
 #########ENCODER#########
-export FULLY_CONNECTED_ENCODER=false
+export FULLY_CONNECTED_ENCODER=true
 export TF_GROUPED_FC_INDEP_ENCODER=false
-export SHALLOW_ENCODER=true
+export SHALLOW_ENCODER=false
 
 #########DECODER#########
 export FULLY_CONNECTED_DECODER=false
-export GENE_GROUPED_FC_INDEP_DECODER=false
-export SHALLOW_DECODER=true
+export GENE_GROUPED_FC_INDEP_DECODER=true
+export SHALLOW_DECODER=false
 
 export ENCODER_DEPTH=2
 export DECODER_DEPTH=2

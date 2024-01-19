@@ -132,6 +132,7 @@ class EvalModels():
         average_activities = average_activities / df_counter
         average_activities.to_csv(self.out_dir+'ensemble_activities.csv',sep='\t')
 
+        print("getting ROC")
         ko_obj = getROC(average_activities, koed_tfs, 'ko_roc.png')
         print("ko auc",ko_obj.auc)
 
@@ -173,6 +174,7 @@ class EvalModels():
                 pd.to_pickle(m.get_reconstruction(ko_data_path+'neg_df.csv',pickle=False,csv=True)[-1],new_path+'dorothea_recon_corr_treated.pkl')
         average_activities = average_activities / df_counter
         average_activities.to_csv(self.out_dir+'dorothea_ensemble_activities.csv',sep='\t')
+        print("average_activities")
         print(average_activities)
 
         ko_obj = getPertROC(average_activities, index_to_koed_tfs,'pert_roc.png')
@@ -232,6 +234,7 @@ class EvalModels():
         print("same model average")
         print(same_model_average)
         rank_df = pd.concat([pd.DataFrame({'m'+str(i):ranks},index=tfs) for i,ranks in enumerate(same_model_average)],axis=1)
+        print("rank df")
         print(rank_df)
         rank_df.to_pickle(self.out_dir+'rank_df.pkl')
         return same_model_average, tfs
@@ -292,7 +295,7 @@ if __name__ == "__main__":
         #FINAL EVAL FC-G
         #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.31/','/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_5-30_12.59.56/'],
         #FINAL EVAL S-S
-        "model_dirs":['/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/','/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_14.26.53/'],
+        #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/','/nobackup/users/schaferd/ae_project_outputs/final_eval/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_14.26.53/'],
 
 
         #MODEL SEARCH 
@@ -321,6 +324,7 @@ if __name__ == "__main__":
         #MOA TEST
         #FC-G
         #"model_dirs":['/nobackup/users/schaferd/ae_project_outputs/moa_tests/saved_moa_test_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_7-31_10.22.55/','/nobackup/users/schaferd/ae_project_outputs/moa_tests/saved_moa_test_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_rel_conn10_7-31_10.23.3/'],
+        "model_dirs":['/nobackup/users/schaferd/ae_project_outputs/moa_tests/saved_no_moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_rel_conn10_11-15_12.4.41/','/nobackup/users/schaferd/ae_project_outputs/moa_tests/saved_moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_11-15_10.54.12/'],
 
 
 

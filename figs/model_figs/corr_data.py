@@ -67,6 +67,7 @@ stat, pval = ttest_ind(fc_decoder,sparse_decoder)
 print('fc vs. sparse decoder',pval)
 
 
+print("CORR")
 print(df)
 model = ols('Corr ~ C(encoder) + C(decoder) + C(encoder):C(decoder)',data=df).fit()
 print(sm.stats.anova_lm(model,typ=2))

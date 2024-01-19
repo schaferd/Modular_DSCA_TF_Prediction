@@ -8,7 +8,7 @@ from scipy import stats
 from pyensembl import EnsemblRelease
 from sklearn.linear_model import LinearRegression
 ensembl_data = EnsemblRelease(78)
-from load_attribution_scores import get_attr_scores_one_run, ensembl_to_gene_name, get_attr_scores_avg_runs
+from load_attribution_scores import *#get_attr_scores_one_run, ensembl_to_gene_name, get_attr_scores_avg_runs
 sys.path.insert(1,'/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/')
 from get_roc_curve import getROC
 from get_pert_roc_curves import getPertROC
@@ -64,20 +64,50 @@ for path in fc_g_path:
             dorothea_recon_corr_fc_g = dorothea_recon_corr_fc_g+[p2+'/'+f for f in os.listdir(p2) if 'dorothea_recon_corr' in f]
             knocktf_recon_corr_fc_g = knocktf_recon_corr_fc_g+[p2+'/'+f for f in os.listdir(p2) if 'knocktf_recon_corr' in f]
 
+s_s_activity_files = list(set(s_s_activity_files))
+fc_g_activity_files = list(set(fc_g_activity_files))
+dorothea_s_s_activity_files = list(set(dorothea_s_s_activity_files))
+dorothea_fc_g_activity_files = list(set(dorothea_fc_g_activity_files))
 
 knocktf_recon_corr_s_s = [pd.read_pickle(f) for f in knocktf_recon_corr_s_s]
 knocktf_recon_corr_fc_g = [pd.read_pickle(f) for f in knocktf_recon_corr_fc_g]
 dorothea_recon_corr_s_s = [pd.read_pickle(f) for f in dorothea_recon_corr_s_s]
 dorothea_recon_corr_fc_g = [pd.read_pickle(f) for f in dorothea_recon_corr_fc_g]
 
-s_s_activities = [pd.read_csv(f,index_col=0) for f in s_s_activity_files]
-fc_g_activities = [pd.read_csv(f,index_col=0) for f in fc_g_activity_files]
-viper_activities = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/inferred_TF_activities/VIPERdiff_activities.csv',sep='\t',index_col=0)
-scenic_activities = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/inferred_TF_activities/SCENICdiff_activities.csv',sep='\t',index_col=0)
-id_to_kotf = pd.read_pickle('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/shallow_shallow/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/fold0_cycle0/ko_activities_cycle0_fold0/knocktf_sample_to_tf.pkl')
-id_to_kotf = id_to_kotf.set_index('Sample_ID')
-s_s_ensemble = pd.read_csv('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/shallow_shallow/ensemble_activities.csv',sep='\t',index_col=0)
-fc_g_ensemble = pd.read_csv('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/fc_g/ensemble_activities.csv',sep='\t',index_col=0)
+
+print(knocktf_recon_corr_s_s[0])
+print(pd.DataFrame(knocktf_recon_corr_s_s[0],index=[0]).T.mean())
+print(pd.DataFrame(knocktf_recon_corr_s_s[0],index=[0]).T.std())
+print(pd.DataFrame(dorothea_recon_corr_s_s[0],index=[0]).T.mean())
+print(pd.DataFrame(dorothea_recon_corr_s_s[0],index=[0]).T.std())
+
+def ktf_recon_corr_hist(ax):
+    ktf_s_s = pd.DataFrame(knocktf_recon_corr_s_s[0],index=[0]).T
+    ktf_fc_g = pd.DataFrame(knocktf_recon_corr_fc_g[0],index=[0]).T
+    #dor_s_s = pd.DataFrame(dorothea_recon_corr_s_s[0],index=[0]).T
+    #dor_fc_g = pd.DataFrame(dorothea_recon_corr_fc_g[0],index=[0]).T
+
+    #corr_df = pd.DataFrame({'ktf_s_s':ktf_s_s[0],'ktf_fc_g':ktf_fc_g[0],'dor_s_s':dor_s_s[0],'dor_fc_g':dor_fc_g[0]})
+    corr_df = pd.DataFrame({'ktf_s_s':ktf_s_s[0],'ktf_fc_g':ktf_fc_g[0]})
+    #corr_df = pd.DataFrame({'dor_s_s':dor_s_s[0],'dor_fc_g':dor_fc_g[0]})
+    corr_df = corr_df.melt(value_vars=corr_df.columns,var_name='Method',value_name='Reconstruction Correlation')
+
+    #colors = ['orange','blue','deeppink','black']
+    colors = ['orange','blue']
+    sns.kdeplot(data=corr_df,x='Reconstruction Correlation',hue='Method',fill=True,palette=colors,legend=True,ax=ax,common_norm=False)
+    ax.set_xlim(-0.2,0.5)
+    
+def dor_recon_corr_hist(ax):
+    dor_s_s = pd.DataFrame(dorothea_recon_corr_s_s[0],index=[0]).T
+    dor_fc_g = pd.DataFrame(dorothea_recon_corr_fc_g[0],index=[0]).T
+
+    corr_df = pd.DataFrame({'dor_s_s':dor_s_s[0],'dor_fc_g':dor_fc_g[0]})
+    corr_df = corr_df.melt(value_vars=corr_df.columns,var_name='Method',value_name='Reconstruction Correlation')
+
+    colors = ['orange','blue']
+    sns.kdeplot(data=corr_df,x='Reconstruction Correlation',hue='Method',fill=True,palette=colors,legend=True,ax=ax,common_norm=False)
+    ax.set_xlim(-0.2,0.5)
+
 
 def consensus(act_list):
     tfs = set(act_list[0].columns)
@@ -172,6 +202,14 @@ def get_cutoff_samples_fractional(df,cutoff,values,names,id_to_kotf):
     filtered_df = df.loc[np.isin(ko_tfs,tfs),:]
     return filtered_df, ko_tfs[np.isin(ko_tfs,tfs)]
 
+def get_corr_cutoffs(corrs,cutoffs):
+    sorted_ = np.argsort(corrs)/len(corrs)
+    avg_corrs = []
+    for cutoff in cutoffs:
+        avg_corrs.append(np.mean(corrs[sorted_ > cutoff]))
+    return avg_corrs
+        
+
 def get_ranking_cutoff_aucs(activities,cutoffs,id_to_kotf,values,names):
     aucs = []
     counts = []
@@ -214,8 +252,22 @@ def auc_list_to_dict(aucs,cutoffs):
 cutoffs = np.arange(0,1,0.1)
 
 def knocktf_plot():
+    viper_activities = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/inferred_TF_activities/VIPERdiff_activities.csv',sep='\t',index_col=0)
+    scenic_activities = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/inferred_TF_activities/SCENICdiff_activities.csv',sep='\t',index_col=0)
+    id_to_kotf = pd.read_pickle('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/shallow_shallow/save_model_shallow-shallow_epochs100_batchsize128_enlr0.01_delr0.01_del20.01_enl20.01_moa1.0_rel_conn10_5-30_12.58.48/fold0_cycle0/ko_activities_cycle0_fold0/knocktf_sample_to_tf.pkl')
+    id_to_kotf = id_to_kotf.set_index('Sample_ID')
+    s_s_ensemble = pd.read_csv('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/shallow_shallow/ensemble_activities.csv',sep='\t',index_col=0)
+    fc_g_ensemble = pd.read_csv('/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/fc_g/ensemble_activities.csv',sep='\t',index_col=0)
+
+    s_s_activities = [pd.read_csv(f,index_col=0) for f in s_s_activity_files]
+    fc_g_activities = [pd.read_csv(f,index_col=0) for f in fc_g_activity_files]
     s_s_values, s_s_names = get_recon_corr_of_sample(s_s_activities,id_to_kotf,knocktf_recon_corr_s_s)
     fc_g_values,fc_g_names = get_recon_corr_of_sample(s_s_activities,id_to_kotf,knocktf_recon_corr_fc_g)
+
+
+    s_s_corr_cutoffs = get_corr_cutoffs(s_s_values,cutoffs)
+    fc_g_corr_cutoffs = get_corr_cutoffs(fc_g_values,cutoffs)
+    quantify_method_increase_corr([s_s_corr_cutoffs,fc_g_corr_cutoffs],cutoffs,['ktf s_s_corr','ktf fc_g_corr'])
 
     """
     s_s_values, s_s_names = get_variance_of_kotf_across_models(s_s_activities,id_to_kotf)
@@ -271,7 +323,7 @@ def knocktf_plot():
     fc_g_s_s_aucs, fc_g_s_s_counts = get_ranking_cutoff_aucs(fc_g_s_s_consensus,cutoffs,id_to_kotf,fc_g_values,fc_g_names)
     scenic_fc_g_aucs, scenic_fc_g_counts = get_ranking_cutoff_aucs(scenic_fc_g_consensus,cutoffs,id_to_kotf,fc_g_values,fc_g_names)
     scenic_s_s_aucs, scenic_s_s_counts = get_ranking_cutoff_aucs(scenic_s_s_consensus,cutoffs,id_to_kotf,s_s_values,s_s_names)
-
+    
 
     viper_auc_df = pd.DataFrame({'cutoff':[c for c in cutoffs],'AUC':viper_aucs,'Counts':viper_counts})
     scenic_auc_df = pd.DataFrame({'cutoff':[c for c in cutoffs],'AUC':scenic_aucs,'Counts':scenic_counts})
@@ -501,12 +553,22 @@ def s_s_viper_consensus_hists(ax,title,s_s_e_auc_df,viper_auc_df,viper_s_s_df):
     derivs = pd.melt(derivs,value_vars=derivs.columns,var_name='Method',value_name='Slope')
     sns.kdeplot(data=derivs,x='Slope',hue='Method',fill=True,palette=colors,legend=True,ax=ax)
 
+def quantify_method_increase_corr(lines,cutoffs,names):
+    derivs = {}
+    for i,line in enumerate(lines):
+        reg = LinearRegression().fit(np.array(cutoffs).reshape(-1, 1),line)
+        corr,pval = stats.pearsonr(cutoffs,line)
+        print(names[i])
+        print(reg.coef_)
+
 def quantify_method_increase(ax,lines,names):
     derivs = {}
     for i,line in enumerate(lines):
         reg = LinearRegression().fit(np.array(line['cutoff']).reshape(-1, 1),line['AUC'])
         error = reg.score(np.array(line['cutoff']).reshape(-1, 1),line['AUC'])
         corr,pval = stats.pearsonr(line['cutoff'],line['AUC'])
+        print(names[i])
+        print(reg.coef_)
         deriv = []
         cutoffs = np.array(line['cutoff'])
         aucs = np.array(line['AUC'])
@@ -533,6 +595,10 @@ def comp_other_methods_hists(ax,title,s_s_e_auc_df,fc_g_e_auc_df,viper_auc_df,sc
 
 
 def comp_other_methods(ax,title,s_s_e_auc_df,fc_g_e_auc_df,viper_auc_df,scenic_auc_df,ymin=0.45,ymax=1,legend=True):
+    names = ['S-S','FC-G','viper','AUCell']
+    lines = [s_s_e_auc_df,fc_g_e_auc_df,viper_auc_df,scenic_auc_df]
+    derivs = quantify_method_increase(ax,lines,names)
+
     sns.lineplot(x='cutoff',y='AUC',data=s_s_e_auc_df,markers=True,color='orange',ax=ax)
     sns.scatterplot(x='cutoff',y='AUC',data=s_s_e_auc_df,markers=True,color='orange',ax=ax,edgecolor='w',linewidth=1.5,marker='o',label='S-S Ensemble')
 
@@ -585,6 +651,10 @@ def dorothea_plot():
 
     s_s_values, s_s_names = get_recon_corr_of_sample(s_s_activities,id_to_kotf,dorothea_recon_corr_s_s)
     fc_g_values, fc_g_names = get_recon_corr_of_sample(fc_g_activities,id_to_kotf,dorothea_recon_corr_fc_g)
+
+    s_s_corr_cutoffs = get_corr_cutoffs(s_s_values,cutoffs)
+    fc_g_corr_cutoffs = get_corr_cutoffs(fc_g_values,cutoffs)
+    quantify_method_increase_corr([s_s_corr_cutoffs,fc_g_corr_cutoffs],cutoffs,['dor s_s_corr','dor fc_g_corr'])
 
     #s_s_values, s_s_names = get_variance_of_sample_across_models(s_s_activities,id_to_kotf)
     #fc_g_values, fc_g_names = get_variance_of_sample_across_models(fc_g_activities,id_to_kotf)
@@ -656,8 +726,12 @@ pd.to_pickle(knocktf_res,full_path+"knocktf_corr_res.pkl")
 dorothea_res = pd.read_pickle(full_path+"dorothea_corr_res.pkl")
 knocktf_res = pd.read_pickle(full_path+"knocktf_corr_res.pkl")
 
+
+
+
 #comp_other_methods((ax,title,s_s_e_auc_df,fc_g_e_auc_df,viper_auc_df,scenic_auc_df,legend=True)
 #s_s_consensus_plot(ax,title,s_s_e_auc_df,viper_auc_df,viper_s_s_df,legend=True)
+
 
 def dorothea_comp_other_methods_plot(ax,ymin=0.45,ymax=1,legend=False):
     comp_other_methods(ax,'Perturbation Validation',dorothea_res['s_s_e_auc_df'],dorothea_res['fc_g_e_auc_df'],dorothea_res['viper_auc_df'],dorothea_res['scenic_auc_df'],ymin=ymin,ymax=ymax,legend=legend)

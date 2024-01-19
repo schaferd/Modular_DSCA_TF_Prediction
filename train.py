@@ -185,6 +185,8 @@ class Train():
         saves entire model, encoder model, figures and correlation if specified
         """
 
+        train_time_start = time.time()
+
         if self.save_figs:
             print("saving at "+str(self.get_save_path()))
         else:
@@ -204,8 +206,6 @@ class Train():
         test_loss = None
         train_loss = None
 
-        train_start = time.time()
-
         for epoch in range(self.epochs):
             if self.warm_restart != 0 and epoch%self.warm_restart_freq == 0:
                 #if self.lr_sched:
@@ -216,8 +216,13 @@ class Train():
                 self.de_optimizer = torch.optim.Adam(self.decoder.parameters(),lr=self.de_lr,weight_decay=self.de_l2_reg)
                 #self.optimizer = torch.optim.Adam(self.model.parameters(),lr=self.lr,weight_decay=self.l2_reg)
 
+            train_iter_start = time.time()
             train_loss = self.train_iteration(train_loader,fold_num)
+            print("train iter", str(time.time()-train_iter_start))
+            test_iter_start = time.time()
             test_loss = self.test_iteration(test_loader,fold_num)
+            print("test iter",str(time.time()-test_iter_start))
+
             print("epoch : {}/{}, test loss = {:6f}".format(epoch+1,self.epochs,test_loss))
             print("epoch : {}/{}, train loss = {:6f}".format(epoch+1,self.epochs,train_loss))
             if self.save_figs and epoch%self.fig_freq == 0 and epoch > 0:
@@ -233,7 +238,9 @@ class Train():
         self.trained_models.append(self.model)
 
         
+        train_loader = self.getSamples(train_loader, self.batch_size, drop_last=True)
         correlation, corr_list,input_list,output_list = get_correlation(self.model,train_loader)
+        test_loader = self.getSamples(test_loader, self.batch_size, drop_last=True)
         test_correlation, test_corr_list,test_input_list,test_output_list = get_correlation(self.model,test_loader)
         print("correlation "+str(correlation))
 
@@ -276,11 +283,13 @@ class Train():
                 self.moa_test_losses = []
                 self.moa_train_losses = []
 
+        print("train time", str(time.time()-train_time_start))
+
         return train_loss,test_loss,correlation, test_correlation,auc
 
 
 
-    def train_iteration(self,train_loader,fold):
+    def train_iteration(self,train_data_celltype,fold):
 
         """
         Completes one training iteration
@@ -289,7 +298,10 @@ class Train():
         epoch_moa_loss = 0
         epoch_moa_violations = 0
         self.model.train()
+        counter = 0
+        train_loader = self.getSamples(train_data_celltype, self.batch_size, drop_last=True)
         for samples, labels in train_loader:
+            counter += 1
             sign = 1 if random.random() >= 0.5 else -1;
             samples = samples + sign*self.noise*torch.randn_like(samples)
 
@@ -310,10 +322,10 @@ class Train():
                 epoch_moa_loss += moa_loss.cpu().detach()
                 epoch_moa_violations += violations.cpu().detach()
 
-            en_l1_norm = sum(p.sum() for p in self.model.encoder.parameters())*self.en_l1_reg
-            de_l1_norm = sum(p.sum() for p in self.model.decoder.parameters())*self.de_l1_reg
+            #en_l1_norm = sum(p.sum() for p in self.model.encoder.parameters())*self.en_l1_reg
+            #de_l1_norm = sum(p.sum() for p in self.model.decoder.parameters())*self.de_l1_reg
 
-            train_loss = train_loss+moa_loss+en_l1_norm+de_l1_norm
+            train_loss = train_loss+moa_loss#+en_l1_norm+de_l1_norm
             
             """
             if len(self.training_losses)<(fold+1):
@@ -331,14 +343,14 @@ class Train():
             if self.de_scheduler is not None:
                 self.de_scheduler.step()
 
-                
         if self.moa > 0:
-                epoch_moa_loss = epoch_moa_loss/len(train_loader)
-                epoch_moa_violations = epoch_moa_violations/len(train_loader)
+                epoch_moa_loss = epoch_moa_loss/counter#len(train_loader)
+                epoch_moa_violations = epoch_moa_violations/counter#len(train_loader)
                 self.moa_train_losses.append(epoch_moa_loss.detach())
                 self.moa_violation_count_train.append(epoch_moa_violations.detach())
 
-        loss = loss/len(train_loader)
+        print(counter)
+        loss = loss/counter#len(train_loader)
         if len(self.training_losses)<(fold+1):
                 self.training_losses.append([loss])
         else:
@@ -348,7 +360,7 @@ class Train():
         return loss
 
 
-    def test_iteration(self,test_loader,fold):
+    def test_iteration(self,test_data_celltype,fold):
         """
         Performs a test iteration 
         Returns loss
@@ -357,10 +369,20 @@ class Train():
         epoch_moa_loss = 0
         epoch_moa_violations = 0
         self.model.eval()
+
+        getting_output_total = 0
+
+        test_loader = self.getSamples(test_data_celltype, self.batch_size, drop_last=True)
+
+        counter = 0
         for samples, labels in test_loader:
+                counter += 1
+
+
                 samples = samples.to(device)
                 labels = labels.to(device)
-                self.model.to(device)
+                #self.model.to(device)
+
                 test_output = self.model(samples.float())
                 self.test_output = test_output
                 test_loss = self.criterion(test_output,labels.float())
@@ -373,19 +395,23 @@ class Train():
                 test_loss = test_loss+moa_loss
                 loss += test_loss.item()
 
+
+
         if self.moa > 0:
-                epoch_moa_loss = epoch_moa_loss/len(test_loader)
-                epoch_moa_violations = epoch_moa_violations/len(test_loader)
+                epoch_moa_loss = epoch_moa_loss/counter#len(test_loader)
+                epoch_moa_violations = epoch_moa_violations/counter#len(test_loader)
                 self.moa_test_losses.append(epoch_moa_loss.detach())
                 self.moa_violation_count_test.append(epoch_moa_violations.detach())
 
-        loss = loss/len(test_loader)
+        loss = loss/counter#len(test_loader)
         if len(self.test_losses)<(fold+1):
                 self.test_losses.append([loss])
         else:
                 self.test_losses[fold].append(loss)
         print("test loss = "+ str(loss))
         self.get_lowest_loss(fold)
+
+
         return loss
 
 
@@ -546,20 +572,23 @@ class Train():
                     train_data_celltype = CellTypeDataset(train_data,self.data_obj.get_output_data(train_data))
                     test_data_celltype = CellTypeDataset(test_data,self.data_obj.get_output_data(test_data))
 
-                    kwargs = {'num_workers':0,'pin_memory':True} if is_gpu == True else {}
+                    kwargs = {'num_workers':4,'pin_memory':True,"pin_memory_device":device} if is_gpu == True else {}
 
-                    train_loader = torch.utils.data.DataLoader(train_data_celltype, batch_size=batch_size,drop_last=True, **kwargs)
-                    test_loader = torch.utils.data.DataLoader(test_data_celltype, batch_size=batch_size,drop_last=True, **kwargs)
+                    #train_loader = torch.utils.data.DataLoader(train_data_celltype, batch_size=batch_size,drop_last=True, **kwargs)
+                    #test_loader = torch.utils.data.DataLoader(test_data_celltype, batch_size=batch_size,drop_last=True, **kwargs)
+                    #train_loader = self.getSamples(train_data_celltype, batch_size, drop_last=True)
+                    #test_loader = self.getSamples(test_data_celltype, batch_size, drop_last=True)
 
 
                     if self.en_lr_sched:
-                        self.en_scheduler = torch.optim.lr_scheduler.OneCycleLR(self.en_optimizer,max_lr=self.en_max_lr,epochs=self.epochs,steps_per_epoch=len(train_loader))
+                        self.en_scheduler = torch.optim.lr_scheduler.OneCycleLR(self.en_optimizer,max_lr=self.en_max_lr,epochs=self.epochs,steps_per_epoch=math.floor(train_data.shape[0]/batch_size))#len(train_loader))
                     if self.de_lr_sched:
-                        self.de_scheduler = torch.optim.lr_scheduler.OneCycleLR(self.de_optimizer,max_lr=self.de_max_lr,epochs=self.epochs,steps_per_epoch=len(train_loader))
+                        self.de_scheduler = torch.optim.lr_scheduler.OneCycleLR(self.de_optimizer,max_lr=self.de_max_lr,epochs=self.epochs,steps_per_epoch=math.floor(train_data.shape[0]/batch_size))#len(train_loader))
 
                     loss_list = []
                     corr_list = []
-                    train_loss,test_loss, corr,test_corr,auc = self.get_trained_model(train_loader,test_loader,fold)
+                    #train_loss,test_loss, corr,test_corr,auc = self.get_trained_model(train_loader,test_loader,fold)
+                    train_loss,test_loss, corr,test_corr,auc = self.get_trained_model(train_data_celltype,test_data_celltype,fold)
                     loss_list.append(test_loss)
                     corr_list.append(corr)
 
@@ -581,6 +610,16 @@ class Train():
             #        validation_data = dataset.iloc[validation_split[0]:validation_split[1]]
             #        validation_data_celltype = CellTypeDataset(validation_data,self.data_obj.get_output_data(validation_data))
             #        validation_loader = torch.utils.data.DataLoader(validation_data_celltype,batch_size=batch_size)
+
+    # Create a train generators
+    def getSamples(self,cell_type_dataset, batchSize,drop_last=True):
+        order = np.random.permutation(np.arange(len(cell_type_dataset.labels)))
+        outList = []
+        while len(order)>0 and len(order >= batchSize):
+            outList.append(order[0:batchSize])
+            yield (torch.from_numpy(i) for i in cell_type_dataset.__getitem__(order[0:batchSize]))
+            order = order[batchSize:]
+
 
 
 

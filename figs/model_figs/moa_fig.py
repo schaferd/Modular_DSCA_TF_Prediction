@@ -7,8 +7,9 @@ import pandas as pd
 corr_base_path='/nobackup/users/schaferd/ae_project_outputs/moa_tests/'
 
 auc_base_path='/home/schaferd/ae_project/Modular_DSCA_TF_Prediction/eval_saved_models/outputs/fc_g/'
-moa_dir = 'saved_moa_test_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_7-31_10.22.55/'
-no_moa_dir = 'saved_moa_test_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_rel_conn10_7-31_10.23.3/'
+#moa_dir = 'saved_moa_test_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_7-31_10.22.55/'
+moa_dir = 'saved_moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_moa1.0_rel_conn10_11-15_10.54.12/'
+no_moa_dir = 'saved_no_moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_rel_conn10_11-15_12.4.41/'
 
 #moa_l2_dir = base_path+'moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_moa1.0_rel_conn10_2-16_8.29.4'
 #no_moa_l2_dir = base_path+'no_moa_fc-genefc_epochs100_batchsize128_enlr0.0001_delr0.01_del20.0001_enl20.0005_rel_conn10_2-16_8.29.16'

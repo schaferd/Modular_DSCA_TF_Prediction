@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export MODEL_TYPE='saved_moa' # name for model
+export MODEL_TYPE='saved_no_moa' # name for model
 export EPOCHS=100 #how many epochs will be created
 export FIG_FREQ=100 # how often figures will get generated
 
@@ -20,8 +20,8 @@ export GENE_GROUPED_FC_INDEP_DECODER=true
 export SHALLOW_DECODER=false
 
 
-export SPLITS=2 # how many splits you want for cross validation
-export CYCLES=5
+export SPLITS=5 # how many splits you want for cross validation
+export CYCLES=2
 
 export EN_L2=0 # L2 norm for Encoder
 export DE_L2=0 # L2 norm for Decoder
@@ -33,7 +33,7 @@ export BATCH_NORM=False # true if want batch norm
 
 export MOA_BETA=0.9
 export MOA_SUBSET=0
-export MOA=1 # constant for MOA
+export MOA=0 # constant for MOA
 
 export WARM_RESTART=0 # how many times you want to restart settings
 

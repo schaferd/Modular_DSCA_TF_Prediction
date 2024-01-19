@@ -83,6 +83,19 @@ for path in ko0_fc_g_path:
             ko0_fc_g_activity_files = ko0_fc_g_activity_files+[p2+'/'+f for f in os.listdir(p2) if 'knockout_diff_activities.csv' in f]
             ko0_dorothea_fc_g_activity_files = ko0_dorothea_fc_g_activity_files+[p2+'/'+f for f in os.listdir(p2) if ('diff_activities.csv' in f and 'knockout' not in f)]
 
+s_s_activity_files = list(set(s_s_activity_files))
+fc_g_activity_files = list(set(fc_g_activity_files))
+dorothea_s_s_activity_files = list(set(dorothea_s_s_activity_files))
+dorothea_fc_g_activity_files = list(set(dorothea_fc_g_activity_files))
+
+ko0_s_s_activity_files = list(set(ko0_s_s_activity_files))
+ko0_fc_g_activity_files = list(set(ko0_fc_g_activity_files))
+ko0_dorothea_s_s_activity_files = list(set(ko0_dorothea_s_s_activity_files))
+ko0_dorothea_fc_g_activity_files = list(set(ko0_dorothea_fc_g_activity_files))
+
+print("len s_s_activity files",len(s_s_activity_files))
+print("len fc_g_activity files",len(fc_g_activity_files))
+
 s_s_activities = [pd.read_csv(f,index_col=0) for f in s_s_activity_files]
 fc_g_activities = [pd.read_csv(f,index_col=0) for f in fc_g_activity_files]
 viper_activities = pd.read_csv('/nobackup/users/schaferd/ae_project_data/ko_data/filtered_data/relevant_data/viper_data/inferred_TF_activities/VIPERdiff_activities.csv',sep='\t',index_col=0)
@@ -121,8 +134,8 @@ def get_aucs(activities,id_to_kotf):
     return aucs
 
 
-def all_sample_box_plot(ax,title,dorothea_ae_df,viper_auc,scenic_auc,viper_s_s_auc,viper_fc_g_auc,show_legend=False):
-    sns.boxplot(data=dorothea_ae_df,x='model',y='AUC',ax=ax,color='w',notch=True,showfliers=False,width=BOX_PLOT_WIDTH,boxprops=BOX_PROPS,medianprops=MEDIAN_PROPS,whiskerprops=WHISKER_PROPS,capprops=CAP_PROPS)
+def all_sample_box_plot(ax,title,dorothea_ae_df,viper_auc,scenic_auc,viper_s_s_auc,viper_fc_g_auc,show_legend=False,ymin=0.48,ymax=1):
+    sns.boxplot(data=dorothea_ae_df,x='model',y='AUC',ax=ax,color='w',notch=False,showfliers=False,width=BOX_PLOT_WIDTH,boxprops=BOX_PROPS,medianprops=MEDIAN_PROPS,whiskerprops=WHISKER_PROPS,capprops=CAP_PROPS)
     sns.swarmplot(data=dorothea_ae_df,x='model',y='AUC',ax=ax,color=SWARM_PLOT_COLOR,size=SWARM_PLOT_SCATTER_SIZE,alpha=SWARM_PLOT_ALPHA)
     """
     ax.axhline(y=viper_auc,color='forestgreen',linestyle='--',zorder=0,label='viper')
@@ -145,7 +158,7 @@ def all_sample_box_plot(ax,title,dorothea_ae_df,viper_auc,scenic_auc,viper_s_s_a
                  fontsize=12)
     """
 
-    #ax.set_ylim(0.5,0.8)
+    ax.set_ylim(ymin,ymax)
     ax.set_ylabel('ROC AUC')
     ax.set_xlabel('Model Type')
     #ax.set_title(title)
@@ -175,13 +188,16 @@ def ktf():
     ko_ae_df = pd.read_pickle('ko_ae_df.pkl')
     
     ###t-test
-    pval = stats.ttest_ind(ko_s_s_aucs,ko_fc_g_aucs)[1]
-    print('knocktf FC-G, S-S t-test pval '+str(pval))
-    pval = stats.ttest_1samp(ko_s_s_aucs,ko_viper_aucs)[1]
+    pval = stats.ttest_ind(ko_s_s_aucs,ko_fc_g_aucs,alternative='greater')[1]*5
+    print('knocktf S-S, FC-G, t-test pval '+str(pval))
+    pval = stats.ttest_1samp(ko_s_s_aucs,ko_viper_aucs,alternative='less')[1]*5
     print('knocktf S-S, viper, t-test pval '+str(pval))
-    pval = stats.ttest_1samp(ko_fc_g_aucs,ko_viper_aucs)[1]
+    pval = stats.ttest_1samp(ko_fc_g_aucs,ko_viper_aucs,alternative='less')[1]*5
     print('knocktf FC-G, viper, t-test pval '+str(pval))
-    raise ValueError()
+    pval = stats.ttest_1samp(ko_s_s_aucs,ko_scenic_aucs,alternative='greater')[1]*5
+    print('knocktf S-S, scenic, t-test pval '+str(pval))
+    pval = stats.ttest_1samp(ko_fc_g_aucs,ko_scenic_aucs,alternative='greater')[1]*5
+    print('knocktf FC-G, scenic, t-test pval '+str(pval))
 
     return ko_ae_df,ko_viper_aucs,ko_scenic_aucs,ko_viper_s_s_aucs,ko_viper_fc_g_aucs
 
@@ -219,12 +235,16 @@ def dorothea():
     dorothea_ae_df = pd.read_pickle('dorothea_ae_df.pkl')
 
     ###t-test
-    pval = stats.ttest_ind(dorothea_s_s_aucs,dorothea_fc_g_aucs)[1]
-    print('FC-G, S-S t-test pval '+str(pval))
-    pval = stats.ttest_1samp(dorothea_s_s_aucs,dorothea_viper_auc)[1]
+    pval = stats.ttest_ind(dorothea_s_s_aucs,dorothea_fc_g_aucs,alternative='greater')[1]*5
+    print('S-S, FC-G, t-test pval '+str(pval))
+    pval = stats.ttest_1samp(dorothea_s_s_aucs,dorothea_viper_auc,alternative='greater')[1]*5
     print('S-S, viper, t-test pval '+str(pval))
-    pval = stats.ttest_1samp(dorothea_fc_g_aucs,dorothea_viper_auc)[1]
+    pval = stats.ttest_1samp(dorothea_fc_g_aucs,dorothea_viper_auc,alternative='greater')[1]*5
     print('FC-G, viper, t-test pval '+str(pval))
+    pval = stats.ttest_1samp(dorothea_s_s_aucs,dorothea_scenic_auc,alternative='greater')[1]*5
+    print('S-S, scenic, t-test pval '+str(pval))
+    pval = stats.ttest_1samp(dorothea_fc_g_aucs,dorothea_scenic_auc,alternative='greater')[1]*5
+    print('FC-G, scenic, t-test pval '+str(pval))
 
     return dorothea_ae_df,dorothea_viper_auc,dorothea_scenic_auc,dorothea_viper_s_s_auc,dorothea_viper_fc_g_auc
 
@@ -298,13 +318,13 @@ def ktf_ko0():
 
     return ko0_ktf_ae_df,ko0_ktf_viper_auc,ko0_ktf_scenic_auc,ko0_ktf_viper_s_s_auc,ko0_ktf_viper_fc_g_auc
 
-def plot_dorothea_vanilla(ax,legend=False):
+def plot_dorothea_vanilla(ax,legend=False,ymin=0.48,ymax=1):
     dorothea_ = pd.read_pickle('dorothea_pert_val.pkl')
-    all_sample_box_plot(ax,'Perturbation Validation',*dorothea_,show_legend=legend)
+    all_sample_box_plot(ax,'Perturbation Validation',*dorothea_,show_legend=legend,ymin=ymin,ymax=ymax)
 
-def plot_ktf_vanilla(ax,legend=False):
+def plot_ktf_vanilla(ax,legend=False,ymin=0.48,ymax=1):
     ktf_ = pd.read_pickle('ktf_val.pkl')
-    all_sample_box_plot(ax,'KnockTF Validation',*ktf_,show_legend=legend)
+    all_sample_box_plot(ax,'KnockTF Validation',*ktf_,show_legend=legend,ymin=ymin,ymax=ymax)
 
 def plot_ko_results(ax):
     """
@@ -331,6 +351,9 @@ def plot_ko_results(ax):
 
 #res = dorothea()
 #pd.to_pickle(res,'dorothea_pert_val.pkl')
+#res = ktf()
+#raise ValueError()
+#pd.to_pickle(res,'ktf_val.pkl')
 """
 fig,ax = plt.subplots(2,2,sharey=True)
 fig.subplots_adjust(left=0.1,bottom=0.2,right=0.9,top=0.8,wspace=0.35,hspace=0.5)
@@ -340,6 +363,8 @@ plot_ko_results(ax)
 #all_sample_box_plot(ax)
 fig.savefig('all_boxplot.png',dpi=300)
 """
+#dorothea()
+#ktf()
 
 
 
